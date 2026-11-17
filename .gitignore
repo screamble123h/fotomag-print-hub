@@ -1,0 +1,31 @@
+# Sensitive/local files are never intended for public GitHub Pages
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+*.secret
+id_rsa*
+id_ed25519*
+**/node_modules/
+**/__pycache__/
+*.pyc
+*.log
+*.tmp
+*.bak
+*.local
+# Test artifacts, screenshots, backups & temporary site candidates
+audit_*
+qa_*
+candidate_*
+v3_*
+verify_yandex_*
+index_*BACKUP*.html
+index_secure_candidate_*.html
+index_mobile_*.html
+build_secure_*.py
+security_stage_*.json
+AUDIT_*.md
+MOBILE_LAUNCH_REPORT_*.md

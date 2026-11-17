@@ -1,0 +1,20 @@
+{
+  "name": "FotoMag — печать с телефона",
+  "short_name": "FotoMag",
+  "description": "Печать фотографий и документов через ботов FotoMag",
+  "lang": "ru",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f9f8f4",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "assets/fotomag_logo_official.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
