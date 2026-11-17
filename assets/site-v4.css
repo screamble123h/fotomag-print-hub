@@ -92,8 +92,8 @@
     .footer{padding:22px 20px 90px;background:#151515;color:#fff;text-align:center;margin-top:10px}
     .footer strong{font-size:15px}.footer p{font-size:12px;color:#c4c4c0;margin:6px 0 10px}
     .footer a{display:inline-flex;min-height:44px;align-items:center;justify-content:center;padding:10px 13px;font-size:13px;color:var(--gold);text-decoration:underline;text-underline-offset:3px}
-    .floating{position:fixed;z-index:20;left:max(10px,calc(50% - 300px));right:max(10px,calc(50% - 300px));bottom:calc(10px + env(safe-area-inset-bottom));background:#111;color:#fff;display:flex;gap:9px;padding:9px;border-radius:16px;box-shadow:0 10px 35px #0005;transform:translateY(calc(130% + 20px));opacity:0;pointer-events:none;transition:transform .2s,opacity .2s}
-    .floating.is-visible{transform:translateY(0);opacity:1;pointer-events:auto}
+    .floating{visibility:hidden;position:fixed;z-index:20;left:max(10px,calc(50% - 300px));right:max(10px,calc(50% - 300px));bottom:calc(10px + env(safe-area-inset-bottom));background:#111;color:#fff;display:flex;gap:9px;padding:9px;border-radius:16px;box-shadow:0 10px 35px #0005;transform:translateY(calc(130% + 20px));opacity:0;pointer-events:none;transition:transform .2s,opacity .2s}
+    .floating.is-visible{visibility:visible;transform:translateY(0);opacity:1;pointer-events:auto}
     .floating a{min-height:44px;display:grid;place-items:center;border-radius:10px;font-size:13px;font-weight:850;padding:9px}
     .floating a:first-child{background:var(--gold);color:#111;flex:1.15}.floating a:last-child{background:#303030;color:#fff;flex:1}
     @media(min-width:620px){.hero{padding-top:30px}.shell{border-left:1px solid #ddd;border-right:1px solid #ddd}.floating{max-width:600px;margin:auto}}
@@ -131,4 +131,52 @@
       .order__phone span{font-size:11px}
       .order__phone strong{font-size:13px}
       .location__address{font-size:16px}
+    }
+
+/* Support extreme text zoom / narrow 196px CSS viewport without clipping controls */
+    @media(max-width:260px){
+      .header{padding:5px 10px 7px;min-height:62px;gap:6px}
+      .header__logo{width:103px;height:50px}
+      .header__where{display:none}
+      .header__links{flex:0 0 auto;gap:0}
+      .header__call{width:44px;height:44px;min-width:44px}
+      main{padding:0 9px 20px}
+      .hero{padding:13px 0 8px}
+      .hero__eyebrow{font-size:9px;letter-spacing:.02em;gap:5px}
+      .hero__eyebrow:before{width:12px}
+      .hero h1{font-size:25px;line-height:1.06;margin:7px 0 8px;letter-spacing:-.047em;overflow-wrap:anywhere}
+      .hero__desc{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+      .order{padding:11px 7px 12px;border-radius:14px;margin-top:4px}
+      .order__head{gap:7px;padding:0 0 9px}
+      .order__symbol{flex:0 0 28px;width:28px;height:28px;font-size:13px}
+      .order h2{font-size:15px;letter-spacing:-.04em;overflow-wrap:anywhere}
+      .order__hint{font-size:10px;line-height:1.3}
+      .bot{min-width:0;gap:6px;padding:7px 6px;min-height:56px}
+      .bot__mark{flex:0 0 30px;width:30px;height:33px;font-size:10px}
+      .bot__mark--tg{font-size:15px}
+      .bot__text{min-width:0;overflow-wrap:anywhere}
+      .bot__text strong{font-size:13px;overflow-wrap:anywhere}
+      .bot__text small{font-size:10px;overflow-wrap:anywhere;line-height:1.2}
+      .bot__arrow{flex:0 0 14px;font-size:16px;padding-right:0}
+      .order__note{font-size:10px;overflow-wrap:anywhere}
+      .order__phone{min-width:0;flex-wrap:wrap;justify-content:center;gap:3px;padding:8px 4px}
+      .order__phone span{font-size:10px}
+      .order__phone strong{font-size:12px;white-space:normal;text-align:center}
+      .section h2,.location__intro h2{font-size:19px}
+      .section{margin-top:21px}
+      .how__item{padding:10px 7px;gap:6px}
+      .how__item p{font-size:12px;overflow-wrap:anywhere}
+      .services{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .services a{min-height:73px;padding:8px 4px}
+      .direct summary{padding:12px 8px;gap:6px}
+      .direct__label{font-size:13px;overflow-wrap:anywhere}
+      .direct__label small{font-size:10px}
+      .location__intro{padding:14px 10px}
+      .location__info{padding:11px}
+      .location__address{font-size:14px;overflow-wrap:anywhere}
+      .location__buttons{grid-template-columns:1fr}
+      .footer{padding-left:8px;padding-right:8px}
+      .footer a{overflow-wrap:anywhere}
+      .floating{left:4px;right:4px;gap:3px;padding:6px}
+      .floating a{min-width:0;padding:7px 3px;font-size:10px;overflow-wrap:anywhere}
     }
