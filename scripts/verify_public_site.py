@@ -18,6 +18,9 @@ required={
  "direct-max":"https://max.ru/u/f9LHodD0cOJ4xQH5eXwmG7FE-sm42CyZd4DzqF_2BbIDG9GFNtKI4fbc5LU",
  "store-photo-map":"https://yandex.com/maps/org/fotomag/1005628718/?lang=ru",
  "map-route":"https://yandex.com/maps/org/fotomag/1005628718/?lang=ru",
+ "order450-vk":"https://vk.com/write103477713",
+ "order450-telegram":"https://t.me/Gug18aa",
+ "order450-max":"https://max.ru/u/f9LHodD0cOJ4xQH5eXwmG7FE-sm42CyZd4DzqF_2BbIDG9GFNtKI4fbc5LU",
 }
 allowed_hosts={"vk.com","vk.ru","t.me","max.ru","yandex.com","kantstovary-dlja-shkoly-i.clients.site"}
 errors=[]
@@ -60,6 +63,18 @@ if 'id="quick-print-photo"' not in html or 'id="quick-id-photo"' not in html:err
 if 'id="photo-print"' not in html or 'id="id-photo"' not in html:errors.append("Photo printing or ID photo service detail missing")
 if 'id="id-photo-call"' not in html or 'id="id-photo-location"' not in html:errors.append("ID photo contact and location actions missing")
 if 'id="faq-id-photo"' not in html:errors.append("Passport photo FAQ missing")
+if 'id="promo450"' not in html or 'id="promo450-cta"' not in html:errors.append("450 promo missing")
+if 'id="order450"' not in html or 'id="order450-request-text"' not in html:errors.append("450 order form missing")
+if 'id="order450-copy"' not in html or 'id="order450-copy-status"' not in html:errors.append("450 copy controls missing")
+if 'id="order450-max"' not in html or 'id="order450-vk"' not in html or 'id="order450-telegram"' not in html:errors.append("450 direct messenger options missing")
+if 'id="order450-email"' not in html or 'id="faq-online450"' not in html:errors.append("450 email / FAQ missing")
+if a.ids.get("order450-email",{}).get("href","").startswith("mailto:kodakprint@yandex.ru?subject=") is False:errors.append("450 email target changed")
+if a.ids.get("quick-id-photo",{}).get("href")!="#promo450":errors.append("450 shortcut target changed")
+if a.ids.get("promo450-cta",{}).get("href")!="#order450":errors.append("450 CTA target changed")
+if html.index('id="order450"')>html.index('id="how-title"'):errors.append("450 order link must be directly under bots")
+if '3×4 см' not in html or '6 фотографий на 10×15' not in html:errors.append("450 offer scope is unclear")
+if 'без фотосъёмки' not in html.lower():errors.append("450 must be distinguished from studio photography")
+
 if html.index('id="quick-print-photo"') > html.index('id="bot-vk"'):errors.append("Photo print shortcut is not prominent")
 if html.index('id="quick-id-photo"') > html.index('id="bot-vk"'):errors.append("ID photo shortcut is not prominent")
 if html.index('id="order-selection"') < html.index('id="bot-tg"'):errors.append("Optional service details must not hide bot buttons")

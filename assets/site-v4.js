@@ -25,6 +25,22 @@
       copy.textContent="Скопировать текст для сообщения";
     });
   }
+  const online450Copy=document.getElementById("order450-copy");
+  const online450Text=document.getElementById("order450-request-text");
+  const online450Status=document.getElementById("order450-copy-status");
+  if(online450Copy&&online450Text&&online450Status){
+    online450Copy.addEventListener("click",async()=>{
+      try{
+        if(!navigator.clipboard?.writeText)throw new Error("Clipboard unavailable");
+        await navigator.clipboard.writeText(online450Text.value);
+        online450Status.textContent="Текст скопирован. Откройте чат FotoMag, вставьте текст и прикрепите фотографию.";
+      }catch(_){
+        online450Text.focus();
+        online450Text.select();
+        online450Status.textContent="Автоматическое копирование недоступно: текст выделен. Скопируйте его вручную, затем откройте чат.";
+      }
+    });
+  }
   if(copy){
     copy.addEventListener("click",async()=>{
       const item=options[active];

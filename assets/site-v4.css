@@ -253,3 +253,68 @@
  .hero-shortcut__text strong{font-size:12px}
  .hero-shortcut__text small{font-size:10px}
 }
+
+/* FotoMag 450 ₽: approved photo-from-submitted-image campaign */
+.hero-shortcut--promo{border-color:#d6ac21;background:#fff3b8;box-shadow:0 2px 0 #e3bb2e}
+.hero-shortcut--promo .hero-shortcut__symbol{background:#181818;color:#ffd43e}
+.promo450{background:radial-gradient(ellipse at 91% 8%,#514111 0%,transparent 42%),#191919;color:white;border:1px solid #d8b63f;border-radius:21px;padding:21px 16px 17px;box-shadow:0 7px 0 #f6cd3e;margin-top:28px;scroll-margin-top:14px}
+.promo450__ribbon{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--gold);text-transform:uppercase;letter-spacing:.055em;font-size:11px;font-weight:850}
+.promo450__star{color:#fff7c0;font-size:21px;line-height:1}
+.promo450__ribbon-note{font-size:10px;font-weight:650;letter-spacing:0;text-transform:none;color:#e5e0c9}
+.promo450__core{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;margin:11px 0}
+.promo450 h2{font-size:clamp(20px,5.9vw,31px);line-height:1.12;letter-spacing:-.045em;margin:0 0 9px;font-weight:850}
+.promo450__copy p{font-size:13px;line-height:1.5;color:#eee9da;margin:0}
+.promo450__price{color:var(--gold);display:flex;align-items:flex-start;gap:2px;line-height:.9;white-space:nowrap;letter-spacing:-.05em}
+.promo450__price strong{font-size:clamp(43px,13vw,68px);font-weight:900}
+.promo450__price span{font-size:clamp(20px,5.5vw,30px);font-weight:850;margin-top:2px}
+.promo450__details{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0 13px}
+.promo450__details span{font-size:11px;border:1px solid #8b7937;border-radius:99px;color:#fff4c4;padding:5px 8px;font-weight:700}
+.promo450__cta{background:var(--gold);color:#151515;display:flex;align-items:center;justify-content:center;gap:7px;min-height:54px;padding:12px;border-radius:12px;font-size:17px;font-weight:900;text-align:center}
+.promo450__cta:hover,.promo450__cta:focus-visible{background:#ffe27a;outline:3px solid #fee3a1;outline-offset:2px}
+.promo450__fine{font-size:11px;color:#d9d3c1;line-height:1.5;margin:12px 2px 0}
+.order450{margin-top:25px;scroll-margin-top:14px;padding:20px 15px;border:1px solid #d6d0c0;background:#fff;border-radius:19px}
+.order450 h2{margin:6px 0 10px;font-size:clamp(21px,5vw,27px);line-height:1.15;letter-spacing:-.035em;font-weight:850}
+.order450__intro{color:#4e4c45;font-size:13px;line-height:1.54;margin:0 0 13px}
+.order450__steps{display:grid;gap:8px;margin:12px 0}
+.order450__steps>div{display:flex;align-items:center;gap:10px;min-height:39px;font-size:12px;line-height:1.4}
+.order450__steps b{flex:0 0 28px;width:28px;height:28px;background:var(--gold);border-radius:8px;display:grid;place-items:center;font-size:13px}
+.order450__label{display:block;font-size:12px;font-weight:850;margin:12px 0 7px}
+#order450-request-text{font:inherit;font-size:12px;line-height:1.5;color:#36342f;background:#faf9f4;display:block;width:100%;min-height:118px;border:1px solid #d3cebe;border-radius:12px;resize:vertical;padding:11px;box-sizing:border-box}
+#order450-request-text:focus-visible{outline:3px solid #d7a900}
+.order450__copy-button{min-height:45px;background:#1b1b1b;color:#fff;border:0;border-radius:11px;font:inherit;font-size:13px;font-weight:850;cursor:pointer;width:100%;margin-top:9px}
+.order450__copy-button:hover,.order450__copy-button:focus-visible{background:#343434;outline:3px solid #dbb227;outline-offset:2px}
+.order450__status{font-size:11px;color:#655c31;line-height:1.45;min-height:15px;margin:6px 0 14px}
+.order450__channel-title{font-size:13px;font-weight:850;margin:15px 0 9px}
+.order450__channels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.order450__channels a{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;min-height:58px;padding:8px 3px;border:1px solid #ddd0a6;background:#fff6d6;color:#141414;border-radius:12px}
+.order450__channels a span{font-weight:900;font-size:13px}
+.order450__channels a small{color:#5c574d;font-size:10px}
+.order450__channels a:hover,.order450__channels a:focus-visible{background:#ffe277;border-color:#9c761e;outline:2px solid #9c761e;outline-offset:1px}
+.order450__email{display:flex;justify-content:center;align-items:center;text-align:center;gap:8px;min-height:47px;padding:11px;margin-top:10px;border:1px solid #383838;color:#272727;border-radius:11px;font-size:12px;font-weight:850}
+.order450__email:hover,.order450__email:focus-visible{background:#fff4cd;outline:2px solid #a17a13;outline-offset:1px}
+.order450__reminder{font-size:11px;color:#645f53;line-height:1.57;margin:13px 0}
+.order450__other{font-size:12px;line-height:1.5;margin:12px 0 0}
+.order450__other a{font-weight:850;text-decoration:underline;text-underline-offset:2px}
+.offer--450{background:#fff9dc;border-color:#e8c44a}
+.offer--450 h3{font-size:18px}
+@media(max-width:350px){
+.promo450{padding:15px 10px}
+.promo450__core{grid-template-columns:minmax(0,1fr) auto;gap:3px}
+.promo450__price strong{font-size:39px}
+.promo450__price span{font-size:19px}
+.promo450 h2{font-size:19px}
+.promo450__copy p{font-size:11px}
+.promo450__ribbon{font-size:10px}
+.promo450__cta{font-size:14px}
+.promo450__details span{font-size:10px}
+.order450{padding:15px 10px}
+.order450__channels a{min-height:57px;padding:6px 2px}
+.order450__channels a span{font-size:11px}
+.order450__channels a small{font-size:9px}
+}
+@media(max-width:260px){
+.promo450__core{display:flex;flex-direction:column-reverse;align-items:flex-start;gap:12px}
+.promo450__price strong{font-size:48px}
+.order450__channels{grid-template-columns:1fr}
+.order450__channels a{min-height:43px;flex-direction:row;gap:8px}
+}
