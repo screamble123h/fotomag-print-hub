@@ -8,11 +8,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; manifest-src 'self'; upgrade-insecure-requests">
   <link rel="icon" href="assets/fotomag_logo_official.svg" type="image/svg+xml">
   <link rel="manifest" href="site.webmanifest">
-  <meta name="description" content="Фото 10×15, документы А4, фото на паспорт и ламинация в FotoMag. Выберите услугу и отправьте файл через ВК, MAX или Telegram. Ижевск, Пушкинская, 173.">
+  <meta name="description" content="Печать фотографий с телефона от 35 ₽ и фото на документы или паспорт от 750 ₽ в FotoMag. Заказ печати через ВКонтакте, MAX и Telegram. Ижевск, Пушкинская, 173.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ru_RU">
   <meta property="og:title" content="FotoMag — печать с телефона">
-  <meta property="og:description" content="Фотографии и документы: отправьте файл в удобный бот. Ижевск, Пушкинская, 173.">
+  <meta property="og:description" content="Печать фото с телефона, фото на документы и паспорт России. Услуги FotoMag, Ижевск, Пушкинская, 173.">
   <meta property="og:image" content="https://screamble123h.github.io/fotomag-print-hub/assets/FotoMag_FACADE_APPROVED_web.webp">
   <link rel="canonical" href="https://screamble123h.github.io/fotomag-print-hub/">
   <title>Печать с телефона в Ижевске — FotoMag</title>
@@ -32,19 +32,31 @@
     <section class="hero" aria-labelledby="main-title">
       <div class="hero__eyebrow">FotoMag · заказ онлайн</div>
       <h1 id="main-title">Распечатать<br>с телефона?<br><span class="highlight">Легко!</span></h1>
-      <p class="hero__desc">Фотографии, документы или PDF — отправьте файл через удобный мессенджер. Бот поможет оформить заказ.</p>
+      <p class="hero__desc">Нужно распечатать фотографии или сделать фото на паспорт? Выберите услугу ниже — подскажем следующий шаг.</p>
+      <nav class="hero-shortcuts" aria-label="Популярные фотоуслуги">
+        <a id="quick-print-photo" class="hero-shortcut" href="#bots" data-service="photo" aria-label="Печать фотографий с телефона — выбрать бота">
+          <span class="hero-shortcut__symbol" aria-hidden="true">▣</span>
+          <span class="hero-shortcut__text"><strong>Печать фото</strong><small>С телефона · от 35 ₽</small></span>
+          <span class="hero-shortcut__arrow" aria-hidden="true">↗</span>
+        </a>
+        <a id="quick-id-photo" class="hero-shortcut" href="#id-photo" aria-label="Фото на документы и паспорт — посмотреть условия и стоимость">
+          <span class="hero-shortcut__symbol" aria-hidden="true">▤</span>
+          <span class="hero-shortcut__text"><strong>Фото на документы</strong><small>В FotoMag · от 750 ₽</small></span>
+          <span class="hero-shortcut__arrow" aria-hidden="true">↗</span>
+        </a>
+      </nav>
     </section>
     <section class="order" id="bots" aria-labelledby="bots-title">
       <div class="order__head"><span class="order__symbol" aria-hidden="true">↗</span><div><h2 id="bots-title">Выберите мессенджер</h2><p class="order__hint">Нажмите — откроется бот FotoMag</p></div></div>
-      <div id="order-selection" class="order__selection" aria-live="polite" hidden>
-        <p id="order-selection-text"></p>
-        <button id="copy-service" type="button" class="order__copy">Скопировать текст для сообщения</button>
-        <small>Выбор услуги остаётся на этой странице: бот не получает его автоматически. Отправьте текст и файл в чате.</small>
-      </div>
       <div class="bot-list">
         <a id="bot-vk" class="bot" href="https://vk.com/write-20848548" target="_blank" rel="noopener noreferrer"><span class="bot__mark" aria-hidden="true">VK</span><span class="bot__text"><strong>ВКонтакте</strong><small>Оформить заказ в боте</small></span><span class="bot__arrow" aria-hidden="true">↗</span></a>
         <a id="bot-max" class="bot" href="https://max.ru/id180904019369_bot" target="_blank" rel="noopener noreferrer"><span class="bot__mark" aria-hidden="true">MAX</span><span class="bot__text"><strong>MAX</strong><small>Оформить заказ в боте</small></span><span class="bot__arrow" aria-hidden="true">↗</span></a>
         <a id="bot-tg" class="bot" href="https://t.me/fotomag_orders_bot" target="_blank" rel="noopener noreferrer"><span class="bot__mark bot__mark--tg" aria-hidden="true">➤</span><span class="bot__text"><strong>Telegram</strong><small>@fotomag_orders_bot</small></span><span class="bot__arrow" aria-hidden="true">↗</span></a>
+      </div>
+      <div id="order-selection" class="order__selection" aria-live="polite" hidden>
+        <p id="order-selection-text"></p>
+        <button id="copy-service" type="button" class="order__copy">Скопировать текст для сообщения</button>
+        <small>Выбор услуги остаётся на этой странице: бот не получает его автоматически. Укажите услугу и отправьте файл в чате.</small>
       </div>
       <p class="order__note">Файл загружается в выбранном боте, а не на этой странице.</p>
       <a class="order__phone" href="tel:+79124665090" aria-label="Позвонить в FotoMag по номеру плюс семь, девятьсот двенадцать, четыреста шестьдесят шесть, пятьдесят, девяносто"><span>☎ Нужна помощь?</span><strong>+7 912 466-50-90</strong></a>
@@ -60,9 +72,9 @@
       <nav class="services" aria-label="Услуги FotoMag — выбрать бота">
         <a href="#bots" data-service="photo" aria-label="Печать фотографий — выбрать бота"><span class="services__icon" aria-hidden="true">▣</span><strong>Печать фото</strong></a>
         <a href="#bots" data-service="docs" aria-label="Печать документов — выбрать бота"><span class="services__icon" aria-hidden="true">▤</span><strong>Документы</strong></a>
-        <a href="#bots" aria-label="Фотоуслуги — выбрать бота"><span class="services__icon" aria-hidden="true">✎</span><strong>Фотоуслуги</strong></a>
+        <a href="#id-photo" aria-label="Фото на документы и паспорт — стоимость и контакты"><span class="services__icon" aria-hidden="true">✎</span><strong>Фото на документы</strong></a>
       </nav>
-      <p class="services__note">Нажмите на услугу, выберите бота и затем нужный раздел в нём.</p>
+      <p class="services__note">Печать фотографий и документов — через бота. Фото на паспорт и другие документы — съёмка в нашем фотоцентре.</p>
     </section>
     <details id="direct" class="direct">
       <summary><span class="direct__icon" aria-hidden="true">✉</span><span class="direct__label">Отправить напрямую<small>Личные сообщения, e-mail или звонок</small></span><span class="chevron" aria-hidden="true">⌄</span></summary>
@@ -79,9 +91,9 @@
       <h2 id="prices-title">Услуги и цены</h2>
       <p class="offers__intro">Примеры стоимости для ориентира. Перед выполнением заказа сотрудник уточнит параметры и окончательную цену.</p>
       <div class="offers__grid">
-        <article class="offer">
-          <span class="offer__category">Печать фотографий</span>
-          <h3>Фото 10×15</h3>
+        <article class="offer" id="photo-print">
+          <span class="offer__category">Печать фотографий с телефона</span>
+          <h3>Печать фото 10×15</h3>
           <p>Струйная печать — 35 ₽. Сублимационная — 55 ₽.</p>
           <div class="offer__bottom"><strong>от 35 ₽/шт.</strong><a class="offer__action" href="#bots" data-service="photo10x15" aria-label="Выбрать бота для печати фото 10 на 15">Выбрать бота</a></div>
         </article>
@@ -91,11 +103,15 @@
           <p>Стоимость зависит от задания: обычно 15–25 ₽ за лист.</p>
           <div class="offer__bottom"><strong>от 15 ₽/лист</strong><a class="offer__action" href="#bots" data-service="docsA4bw" aria-label="Выбрать бота для чёрно-белой печати документов А4">Выбрать бота</a></div>
         </article>
-        <article class="offer">
-          <span class="offer__category">В фотоцентре</span>
-          <h3>Фото на документы</h3>
-          <p>Обычный комплект — 750 ₽. На паспорт России — 850 ₽.</p>
-          <div class="offer__bottom"><strong>от 750 ₽</strong><a class="offer__action offer__action--secondary" href="tel:+79124665090">Позвонить</a></div>
+        <article class="offer offer--id" id="id-photo">
+          <span class="offer__category">Съёмка в FotoMag · Пушкинская, 173</span>
+          <h3>Фото на документы и паспорт РФ</h3>
+          <p>Сделаем фотографию в фотоцентре и подготовим к нужному формату. Обычный комплект — 750 ₽, паспорт России — 850 ₽. Если у вас уже есть готовый снимок, уточните вариант изготовления по телефону.</p>
+          <div class="offer__bottom">
+            <strong>от 750 ₽</strong>
+            <a id="id-photo-call" class="offer__action offer__action--secondary" href="tel:+79124665090">☎ Позвонить и уточнить</a>
+            <a id="id-photo-location" class="offer__map-link" href="#location">Адрес и часы работы ↓</a>
+          </div>
         </article>
         <article class="offer">
           <span class="offer__category">В фотоцентре</span>
@@ -111,6 +127,8 @@
       <h2 id="faq-title">Частые вопросы</h2>
       <details><summary>Что такое бот и как им пользоваться? <span aria-hidden="true">⌄</span></summary>
         <p>Бот — это автоматический помощник в привычном мессенджере. Нажмите ВКонтакте, MAX или Telegram, откройте чат и следуйте подсказкам. Не знаете, с чего начать? Можно просто позвонить нам.</p></details>
+      <details id="faq-id-photo"><summary>Как сделать фото на паспорт или документы? <span aria-hidden="true">⌄</span></summary>
+        <p>Для съёмки приходите в FotoMag по адресу Ижевск, Пушкинская, 173. Обычный комплект стоит 750 ₽, фото на паспорт России — 850 ₽. Требования к фотографии и необходимость записи можно уточнить по телефону <a href="tel:+79124665090">+7 912 466-50-90</a>. Отправка файла в бот сама по себе не означает, что фото на документы готово.</p></details>
       <details><summary>Как узнать, что заказ приняли? <span aria-hidden="true">⌄</span></summary>
         <p>После отправки файлов проверьте ответ в том же чате. Если подтверждения нет или непонятно, когда будет готов заказ, напишите оператору либо позвоните по телефону выше. Не считайте отправку файла подтверждением готовности.</p></details>
       <details><summary>Как отправить PDF или фотографии? <span aria-hidden="true">⌄</span></summary>
