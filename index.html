@@ -8,7 +8,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; manifest-src 'self'; upgrade-insecure-requests">
   <link rel="icon" href="assets/fotomag_logo_official.svg" type="image/svg+xml">
   <link rel="manifest" href="site.webmanifest">
-  <meta name="description" content="FotoMag — печать документов, PDF и фотографий с телефона. Оформите заказ через бот ВКонтакте, MAX или Telegram. Ижевск, Пушкинская, 173.">
+  <meta name="description" content="Фото 10×15, документы А4, фото на паспорт и ламинация в FotoMag. Выберите услугу и отправьте файл через ВК, MAX или Telegram. Ижевск, Пушкинская, 173.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ru_RU">
   <meta property="og:title" content="FotoMag — печать с телефона">
@@ -36,6 +36,11 @@
     </section>
     <section class="order" id="bots" aria-labelledby="bots-title">
       <div class="order__head"><span class="order__symbol" aria-hidden="true">↗</span><div><h2 id="bots-title">Выберите мессенджер</h2><p class="order__hint">Нажмите — откроется бот FotoMag</p></div></div>
+      <div id="order-selection" class="order__selection" aria-live="polite" hidden>
+        <p id="order-selection-text"></p>
+        <button id="copy-service" type="button" class="order__copy">Скопировать текст для сообщения</button>
+        <small>Выбор услуги остаётся на этой странице: бот не получает его автоматически. Отправьте текст и файл в чате.</small>
+      </div>
       <div class="bot-list">
         <a id="bot-vk" class="bot" href="https://vk.com/write-20848548" target="_blank" rel="noopener noreferrer"><span class="bot__mark" aria-hidden="true">VK</span><span class="bot__text"><strong>ВКонтакте</strong><small>Оформить заказ в боте</small></span><span class="bot__arrow" aria-hidden="true">↗</span></a>
         <a id="bot-max" class="bot" href="https://max.ru/id180904019369_bot" target="_blank" rel="noopener noreferrer"><span class="bot__mark" aria-hidden="true">MAX</span><span class="bot__text"><strong>MAX</strong><small>Оформить заказ в боте</small></span><span class="bot__arrow" aria-hidden="true">↗</span></a>
@@ -46,14 +51,15 @@
     </section>
     <section class="section how" aria-labelledby="how-title">
       <div class="section__kicker">Быстро и понятно</div><h2 id="how-title">Как оформить заказ</h2>
+      <p class="how__intro">Бот — это помощник внутри ВКонтакте, MAX или Telegram. Он подсказывает шаги оформления. Ничего устанавливать специально для FotoMag не нужно, если у вас уже есть один из этих мессенджеров.</p>
       <div class="how__grid">
         <div class="how__item"><span>1</span><p><strong>Откройте бота</strong> в своём мессенджере</p></div>
         <div class="how__item"><span>2</span><p><strong>Выберите услугу</strong> и прикрепите фото или PDF</p></div>
         <div class="how__item"><span>3</span><p><strong>Укажите параметры</strong> и подтвердите заказ</p></div>
       </div>
       <nav class="services" aria-label="Услуги FotoMag — выбрать бота">
-        <a href="#bots" aria-label="Печать фотографий — выбрать бота"><span class="services__icon" aria-hidden="true">▣</span><strong>Печать фото</strong></a>
-        <a href="#bots" aria-label="Печать документов — выбрать бота"><span class="services__icon" aria-hidden="true">▤</span><strong>Документы</strong></a>
+        <a href="#bots" data-service="photo" aria-label="Печать фотографий — выбрать бота"><span class="services__icon" aria-hidden="true">▣</span><strong>Печать фото</strong></a>
+        <a href="#bots" data-service="docs" aria-label="Печать документов — выбрать бота"><span class="services__icon" aria-hidden="true">▤</span><strong>Документы</strong></a>
         <a href="#bots" aria-label="Фотоуслуги — выбрать бота"><span class="services__icon" aria-hidden="true">✎</span><strong>Фотоуслуги</strong></a>
       </nav>
       <p class="services__note">Нажмите на услугу, выберите бота и затем нужный раздел в нём.</p>
@@ -68,6 +74,54 @@
         <a id="direct-email" class="personal" href="mailto:kodakprint@yandex.ru?subject=FotoMag%20%E2%80%94%20%D0%B7%D0%B0%D0%BA%D0%B0%D0%B7%20%D0%BD%D0%B0%20%D0%BF%D0%B5%D1%87%D0%B0%D1%82%D1%8C"><span class="personal__abbr">@</span><span class="personal__main"><strong>Электронная почта</strong><small>kodakprint@yandex.ru</small></span><span class="personal__arrow">↗</span></a>
       </div>
     </details>
+    <section class="offers section" id="prices" aria-labelledby="prices-title">
+      <div class="section__kicker">Наши услуги</div>
+      <h2 id="prices-title">Услуги и цены</h2>
+      <p class="offers__intro">Примеры стоимости для ориентира. Перед выполнением заказа сотрудник уточнит параметры и окончательную цену.</p>
+      <div class="offers__grid">
+        <article class="offer">
+          <span class="offer__category">Печать фотографий</span>
+          <h3>Фото 10×15</h3>
+          <p>Струйная печать — 35 ₽. Сублимационная — 55 ₽.</p>
+          <div class="offer__bottom"><strong>от 35 ₽/шт.</strong><a class="offer__action" href="#bots" data-service="photo10x15" aria-label="Выбрать бота для печати фото 10 на 15">Выбрать бота</a></div>
+        </article>
+        <article class="offer">
+          <span class="offer__category">Печать документов</span>
+          <h3>А4, чёрно-белая</h3>
+          <p>Стоимость зависит от задания: обычно 15–25 ₽ за лист.</p>
+          <div class="offer__bottom"><strong>от 15 ₽/лист</strong><a class="offer__action" href="#bots" data-service="docsA4bw" aria-label="Выбрать бота для чёрно-белой печати документов А4">Выбрать бота</a></div>
+        </article>
+        <article class="offer">
+          <span class="offer__category">В фотоцентре</span>
+          <h3>Фото на документы</h3>
+          <p>Обычный комплект — 750 ₽. На паспорт России — 850 ₽.</p>
+          <div class="offer__bottom"><strong>от 750 ₽</strong><a class="offer__action offer__action--secondary" href="tel:+79124665090">Позвонить</a></div>
+        </article>
+        <article class="offer">
+          <span class="offer__category">В фотоцентре</span>
+          <h3>Ламинация А4</h3>
+          <p>Защитим ваш документ или распечатанный материал.</p>
+          <div class="offer__bottom"><strong>150 ₽</strong><a class="offer__action offer__action--secondary" href="tel:+79124665090">Уточнить</a></div>
+        </article>
+      </div>
+      <p class="offers__disclaimer">Цены ориентировочные. Итоговая стоимость может зависеть от бумаги, количества, формата и других параметров — уточняйте её до оплаты.</p>
+    </section>
+    <section class="faq section" id="help" aria-labelledby="faq-title">
+      <div class="section__kicker">Помощь клиенту</div>
+      <h2 id="faq-title">Частые вопросы</h2>
+      <details><summary>Что такое бот и как им пользоваться? <span aria-hidden="true">⌄</span></summary>
+        <p>Бот — это автоматический помощник в привычном мессенджере. Нажмите ВКонтакте, MAX или Telegram, откройте чат и следуйте подсказкам. Не знаете, с чего начать? Можно просто позвонить нам.</p></details>
+      <details><summary>Как узнать, что заказ приняли? <span aria-hidden="true">⌄</span></summary>
+        <p>После отправки файлов проверьте ответ в том же чате. Если подтверждения нет или непонятно, когда будет готов заказ, напишите оператору либо позвоните по телефону выше. Не считайте отправку файла подтверждением готовности.</p></details>
+      <details><summary>Как отправить PDF или фотографии? <span aria-hidden="true">⌄</span></summary>
+        <p>В выбранном боте прикрепите файл и укажите нужный размер, количество и бумагу. Если файл не принимается, откройте раздел «Отправить напрямую» и воспользуйтесь личным сообщением или электронной почтой.</p></details>
+      <details><summary>Где хранятся отправленные файлы? <span aria-hidden="true">⌄</span></summary>
+        <p>Эта веб-страница не получает и не сохраняет файлы. Вы отправляете их в выбранный мессенджер или на e-mail FotoMag. Для паспортов и других конфиденциальных документов предварительно уточните у сотрудника порядок обработки и удаления файлов.</p></details>
+      <details><summary>Можно оплатить прямо на сайте? <span aria-hidden="true">⌄</span></summary>
+        <p>Нет. На этой странице нет онлайн-оплаты и собственной корзины. Окончательную стоимость и способ оплаты уточняйте после подтверждения заказа.</p></details>
+      <details><summary>Где и когда забрать готовое? <span aria-hidden="true">⌄</span></summary>
+        <p>После подтверждения готовности приезжайте в FotoMag: Ижевск, Пушкинская, 173. Понедельник–пятница: 08:30–21:00, суббота–воскресенье: 10:00–19:00.</p></details>
+    </section>
     <section class="location" id="location" aria-labelledby="location-title">
       <div class="location__intro"><div class="section__kicker">Ждём в гости</div><h2 id="location-title">Где мы находимся</h2><p>Нажмите на фотографию магазина — откроется FotoMag в Яндекс Картах.</p></div>
       <a class="location__photo" id="store-photo-map" href="https://yandex.com/maps/org/fotomag/1005628718/?lang=ru" target="_blank" rel="noopener noreferrer" aria-label="Открыть FotoMag на Яндекс Картах"><img src="assets/FotoMag_FACADE_APPROVED_web.webp" loading="lazy" width="1060" height="675" alt="Фото входа в FotoMag, Пушкинская, 173, Ижевск"><span class="location__photo__cta"><b>Яндекс Карты</b><span aria-hidden="true">↗</span></span></a>
