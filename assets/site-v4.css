@@ -180,3 +180,33 @@
       .floating{left:4px;right:4px;gap:3px;padding:6px}
       .floating a{min-width:0;padding:7px 3px;font-size:10px;overflow-wrap:anywhere}
     }
+
+/* FotoMag services v2: beginner guidance, real service pricing, FAQ and honest selected-service context */
+.how__intro{color:#5b5b55;font-size:13px;line-height:1.55;margin:0 0 14px}
+.offers__intro{margin:0 0 13px;color:#5d5d57;font-size:13px;line-height:1.52}
+.offers__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.offer{display:flex;flex-direction:column;min-width:0;background:#fff;border:1px solid var(--line);border-radius:15px;padding:15px 12px;gap:9px}
+.offer__category{font-size:10px;font-weight:850;letter-spacing:.07em;color:#756008;text-transform:uppercase}
+.offer h3{margin:0;font-size:17px;line-height:1.22;letter-spacing:-.028em;font-weight:850;overflow-wrap:anywhere}
+.offer p{margin:0;font-size:12px;line-height:1.46;color:#52514e;flex:1;overflow-wrap:anywhere}
+.offer__bottom{margin-top:auto;display:flex;flex-direction:column;gap:9px}
+.offer__bottom strong{font-size:18px;line-height:1.2;letter-spacing:-.03em;font-weight:850}
+.offer__action{min-height:44px;padding:10px 8px;border-radius:10px;background:var(--gold);font-weight:850;font-size:12px;display:grid;place-items:center;text-align:center;border:1px solid #e0b82d}
+.offer__action:hover,.offer__action:focus-visible{background:#ffe47b;outline:2px solid #947000;outline-offset:2px}
+.offer__action--secondary{background:#fff;border:1px solid #292929}
+.offer__action--secondary:hover{background:#fff5d2}
+.offers__disclaimer{font-size:11px;line-height:1.48;color:#66625b;margin:12px 2px 0}
+.faq{margin-top:28px}
+.faq details{margin-top:8px;border-radius:12px}
+.faq summary{min-height:53px;padding:12px 14px;font-size:13px;line-height:1.35;font-weight:850;justify-content:space-between;gap:10px}
+.faq summary span{font-size:20px;flex:none}
+.faq details[open] summary{border-bottom:1px solid var(--line)}
+.faq details p{margin:0;padding:12px 14px 16px;font-size:13px;color:#50504b;line-height:1.58}
+.order__selection{margin:0 0 12px;border:1px solid #c7ac4b;background:#2b281c;border-radius:11px;padding:10px 11px}
+.order__selection p{margin:0 0 8px;font-size:12px;line-height:1.45;color:#fff1b9}
+.order__selection small{font-size:11px;line-height:1.45;display:block;color:#d5c99f;margin-top:7px}
+.order__copy{width:100%;min-height:44px;background:var(--gold);color:#111;border:0;border-radius:9px;font-size:12px;font-weight:850;padding:8px 10px;cursor:pointer}
+.order__copy:hover,.order__copy:focus-visible{background:#ffe47b;outline:2px solid #eebd00;outline-offset:2px}
+[hidden]{display:none!important}
+@media(max-width:359px){.offers__grid{grid-template-columns:1fr}.offer{padding:13px}.offer__bottom{flex-direction:row;align-items:center;justify-content:space-between}.offer__action{max-width:125px;flex:0 0 120px}.offer__bottom strong{font-size:16px}}
+@media(max-width:260px){.offers__grid{grid-template-columns:1fr}.offer__bottom{flex-direction:column;align-items:stretch}.offer__action{max-width:none;flex:initial}.faq summary{padding:10px;font-size:12px}.faq details p{padding:10px;font-size:12px}}
