@@ -2,7 +2,14 @@
   const bar=document.getElementById("floating"),bots=document.getElementById("bots");
   if(!bar||!bots)return;
   let scheduled=false;
-  function update(){scheduled=false; const r=bots.getBoundingClientRect();bar.classList.toggle("is-visible",r.bottom<40 && window.scrollY>150);}
+  const order450=document.getElementById("order450");
+  function update(){
+    scheduled=false;
+    const r=bots.getBoundingClientRect();
+    const o=order450?.getBoundingClientRect();
+    const orderingVisible=!!o && o.top<window.innerHeight-50 && o.bottom>55;
+    bar.classList.toggle("is-visible",r.bottom<40 && window.scrollY>150 && !orderingVisible);
+  }
   function schedule(){if(!scheduled){scheduled=true;requestAnimationFrame(update);}}
   window.addEventListener("scroll",schedule,{passive:true});window.addEventListener("resize",schedule,{passive:true});update();
   const selected=document.getElementById("order-selection");
