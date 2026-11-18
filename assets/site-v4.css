@@ -380,3 +380,55 @@
 
 /* Make optional long instructions truly absent from layout, pointer and keyboard flow until opened */
 .order450__extra:not([open]) .order450__extra-body{display:none}
+
+/* FotoMag: one personal-message button with four contacts on demand */
+.personal-top{margin-top:11px;background:#fff4bd;color:#1d1b16;border:1px solid #b89931;
+ border-radius:12px;min-height:59px;padding:11px 12px;display:flex;align-items:center;gap:10px;text-decoration:none}
+.personal-top__icon{display:grid;place-items:center;background:#191919;color:var(--gold);width:37px;height:37px;flex:0 0 37px;border-radius:10px;font-size:19px}
+.personal-top>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.personal-top strong{font-size:16px;line-height:1.2;font-weight:850}
+.personal-top small{font-size:11px;color:#504a3c;line-height:1.3}
+.personal-top__arrow{font-size:21px;font-weight:900;flex:none}
+.personal-top:hover,.personal-top:focus-visible{background:#ffe17b;outline:2px solid #c19a20;outline-offset:2px}
+.personal-contacts{scroll-margin-top:15px;border:2px solid #caaa35;border-radius:15px;overflow:hidden;background:#ffefaa;margin:11px 0 16px}
+.personal-contacts__trigger{list-style:none;cursor:pointer;min-height:76px;display:flex;align-items:center;gap:12px;padding:12px 14px}
+.personal-contacts__trigger::-webkit-details-marker{display:none}
+.personal-contacts__trigger:hover,.personal-contacts__trigger:focus-visible{background:#ffe177;outline:3px solid #c49e28;outline-offset:-3px}
+.personal-contacts__icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;background:#181818;color:#ffda42;font-size:23px}
+.personal-contacts__label{display:flex;flex:1;flex-direction:column;min-width:0;gap:4px}
+.personal-contacts__label strong{font-size:clamp(18px,5.5vw,23px);line-height:1.1;font-weight:900}
+.personal-contacts__label small{font-size:12px;font-weight:650;color:#504323;line-height:1.3}
+.personal-contacts__chevron{font-size:26px;font-weight:700;transition:transform .15s;flex:none}
+.personal-contacts[open] .personal-contacts__chevron{transform:rotate(180deg)}
+.personal-contacts__body{padding:12px;border-top:1px solid #dfc569;background:#fffdf5}
+.personal-contacts__intro{font-size:13px;line-height:1.5;color:#4f4b41;margin:0 0 11px}
+.personal-contacts__links{display:grid;gap:8px}
+.personal-contacts__link{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #e0dbcd;border-radius:11px;min-height:61px;background:#fff;color:#1d1d1b}
+.personal-contacts__link:hover,.personal-contacts__link:focus-visible{background:#fff1b4;border-color:#c3a02d;outline:2px solid #c3a02d;outline-offset:1px}
+.personal-contacts__mark{width:37px;height:37px;flex:0 0 37px;display:grid;place-items:center;border-radius:10px;background:#1d1d1d;color:#ffd940;font-size:11px;font-weight:900}
+.personal-contacts__link>span:nth-child(2){flex:1;min-width:0}
+.personal-contacts__link strong{display:block;font-size:16px;line-height:1.2;font-weight:850}
+.personal-contacts__link small{display:block;color:#625f56;font-size:12px;line-height:1.35;margin-top:3px;overflow-wrap:anywhere}
+.personal-contacts__link>span:last-child{font-size:18px;flex:none}
+@media(max-width:350px){
+ .personal-top{padding:9px;gap:7px;min-height:55px}
+ .personal-top__icon{width:32px;height:34px;flex-basis:32px}
+ .personal-top strong{font-size:15px}
+ .personal-top small{font-size:10px}
+ .personal-contacts__trigger{padding:10px 8px;gap:8px;min-height:66px}
+ .personal-contacts__icon{width:34px;height:35px;flex-basis:34px}
+ .personal-contacts__label strong{font-size:18px}
+ .personal-contacts__label small{font-size:10px}
+ .personal-contacts__link{padding:9px;gap:7px}
+ .personal-contacts__link strong{font-size:15px}
+ .personal-contacts__link small{font-size:11px}
+}
+@media(max-width:260px){
+ .personal-contacts__label small{overflow-wrap:anywhere}
+ .personal-contacts__link strong{font-size:14px}
+}
+
+/* Explicitly remove collapsed personal contacts from layout and keyboard flow */
+.personal-contacts:not([open]) .personal-contacts__body{display:none}
+
+.anchor-alias{display:block;height:0;scroll-margin-top:15px}

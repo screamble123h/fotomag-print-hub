@@ -12,6 +12,20 @@
   }
   function schedule(){if(!scheduled){scheduled=true;requestAnimationFrame(update);}}
   window.addEventListener("scroll",schedule,{passive:true});window.addEventListener("resize",schedule,{passive:true});update();
+  const personalDetails=document.getElementById("personal-contacts");
+  if(personalDetails){
+    const openPersonal=()=>{
+      personalDetails.open=true;
+      requestAnimationFrame(()=>personalDetails.scrollIntoView({behavior:"smooth",block:"start"}));
+    };
+    for(const el of document.querySelectorAll("[data-open-personal]")){
+      el.addEventListener("click",openPersonal);
+    }
+    if((window.location.hash==="#personal-contacts"||window.location.hash==="#direct"))personalDetails.open=true;
+    window.addEventListener("hashchange",()=>{
+      if((window.location.hash==="#personal-contacts"||window.location.hash==="#direct"))personalDetails.open=true;
+    });
+  }
   const selected=document.getElementById("order-selection");
   const selectedText=document.getElementById("order-selection-text");
   const copy=document.getElementById("copy-service");
