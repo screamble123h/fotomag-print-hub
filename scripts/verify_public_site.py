@@ -66,6 +66,8 @@ if 'id="promo450"' not in html or 'id="promo450-cta"' not in html:errors.append(
 if 'id="order450"' not in html or 'id="order450-request-text"' not in html:errors.append("450 order form missing")
 if 'id="order450-copy"' not in html or 'id="order450-copy-status"' not in html:errors.append("450 copy controls missing")
 if 'id="personal-top"' not in html or 'id="personal-contacts"' not in html:errors.append("Personal button or expandable panel missing")
+if "Отправить напрямую" in html:errors.append("FAQ still points to removed old label")
+if html.count('href="#personal-contacts" data-open-personal')<2:errors.append("Personal button not reachable from FAQ")
 if 'id="personal-send-trigger"' not in html or 'Отправить лично' not in html:errors.append("Personal button wording missing")
 if 'id="faq-online450"' not in html:errors.append("450 FAQ missing")
 if a.ids.get("direct-email",{}).get("href","").startswith("mailto:kodakprint@yandex.ru?subject=") is False:errors.append("Personal email target changed")
