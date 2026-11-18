@@ -1,124 +1,120 @@
 #!/usr/bin/env python3
-"""Zero-dependency allowlist for FotoMag public static landing page."""
-from html.parser import HTMLParser
+"""FotoMag public smartphone release gate — no network and no third-party dependencies."""
 from pathlib import Path
+from html.parser import HTMLParser
 from urllib.parse import urlsplit
 import json,re,sys
 ROOT=Path(__file__).resolve().parents[1]
-FILE=ROOT/"index.html"
-html=FILE.read_text(encoding="utf-8")
-css=(ROOT/"assets/site-v4.css").read_text(encoding="utf-8")
-js=(ROOT/"assets/site-v4.js").read_text(encoding="utf-8")
-required={
- "bot-vk":"https://vk.com/write-20848548",
- "bot-max":"https://max.ru/id180904019369_bot",
- "bot-tg":"https://t.me/fotomag_orders_bot",
- "direct-vk":"https://vk.com/write103477713",
- "direct-tg":"https://t.me/Gug18aa",
- "direct-max":"https://max.ru/u/f9LHodD0cOJ4xQH5eXwmG7FE-sm42CyZd4DzqF_2BbIDG9GFNtKI4fbc5LU",
- "store-photo-map":"https://yandex.com/maps/org/fotomag/1005628718/?lang=ru",
- "map-route":"https://yandex.com/maps/org/fotomag/1005628718/?lang=ru",
-}
-allowed_hosts={"vk.com","vk.ru","t.me","max.ru","yandex.com","kantstovary-dlja-shkoly-i.clients.site"}
+HTML=ROOT/'index.html'
+CSS=ROOT/'assets/app-shell.css'
+JS=ROOT/'assets/app-shell.js'
 errors=[]
-class Analyzer(HTMLParser):
- def __init__(self):super().__init__();self.ids={};self.links=[];self.scripts=[];self.styles=[];self.forms=0;self.meta={};self.references=[]
- def handle_starttag(self,tag,attrs):
-  a=dict(attrs)
-  if "id" in a:
-   if a["id"] in self.ids:errors.append("Duplicate ID "+a["id"])
-   self.ids[a["id"]]=a
-  for k,v in attrs:
-   if k and k.lower().startswith("on"):errors.append("Inline event handler")
-   if k=="style":errors.append("Inline style attribute")
-  if tag in ("form","iframe","object","embed","base"):errors.append("Unexpected HTML tag: "+tag)
-  if tag=="script":
-   self.scripts.append(a)
-   if not (a.get("src")=="assets/site-v4.js" or (a.get("type")=="application/ld+json" and not a.get("src"))):
-    errors.append("Unexpected script")
-  if tag=="style":errors.append("Inline style tag")
-  if tag=="link":self.references.append(a)
-  if tag=="a":
-   self.links.append(a)
-   href=a.get("href","")
-   if href.startswith("#"):pass
-   elif href.startswith("tel:"):
-    if href!="tel:+79124665090":errors.append("Unexpected telephone target")
-   elif href.startswith("mailto:"):
-    if not href.startswith("mailto:kodakprint@yandex.ru"):errors.append("Unexpected mail target")
-   else:
-    u=urlsplit(href)
-    if u.scheme!="https" or u.hostname not in allowed_hosts or u.username or u.password:errors.append("Unexpected external domain or protocol")
-    if a.get("target")=="_blank" and not ("noopener" in a.get("rel","") and "noreferrer" in a.get("rel","")):errors.append("Unsafe target blank")
-  if tag=="meta" and a.get("http-equiv"):self.meta[a["http-equiv"].lower()]=a.get("content")
-a=Analyzer();a.feed(html)
-for key,url in required.items():
- if a.ids.get(key,{}).get("href")!=url:errors.append("Critical link mismatch: "+key)
-if "class=\"order__phone\"" not in html:errors.append("Visible telephone missing")
-if '<details id="direct"' in html:errors.append("Old redundant personal panel remains")
-if 'id="direct"' not in html:errors.append("Old personal URL alias missing")
-if 'class="offers section"' not in html or 'id="prices-title"' not in html:errors.append("Services and prices section missing")
-if 'id="quick-print-photo"' not in html or 'id="quick-id-photo"' not in html:errors.append("Photo services must be visible on the first screen")
-if 'id="photo-print"' not in html or 'id="id-photo"' not in html:errors.append("Photo printing or ID photo service detail missing")
-if 'id="id-photo-call"' not in html or 'id="id-photo-location"' not in html:errors.append("ID photo contact and location actions missing")
-if 'id="faq-id-photo"' not in html:errors.append("Passport photo FAQ missing")
-if 'id="promo450"' not in html or 'id="promo450-cta"' not in html:errors.append("450 promo missing")
-if 'id="order450"' not in html or 'id="order450-request-text"' not in html:errors.append("450 order form missing")
-if 'id="order450-copy"' not in html or 'id="order450-copy-status"' not in html:errors.append("450 copy controls missing")
-if 'id="personal-top"' not in html or 'id="personal-contacts"' not in html:errors.append("Personal button or expandable panel missing")
-if "Отправить напрямую" in html:errors.append("FAQ still points to removed old label")
-if html.count('href="#personal-contacts" data-open-personal')<2:errors.append("Personal button not reachable from FAQ")
-if 'id="personal-send-trigger"' not in html or 'Отправить лично' not in html:errors.append("Personal button wording missing")
-if 'id="faq-online450"' not in html:errors.append("450 FAQ missing")
-if a.ids.get("direct-email",{}).get("href","").startswith("mailto:kodakprint@yandex.ru?subject=") is False:errors.append("Personal email target changed")
-if html.count('id="personal-contacts"')!=1 or html.count('class="personal-contacts__link"')!=4:errors.append("Expected one personal panel with four ways to contact")
-if html.index('id="personal-contacts"')>html.index('id="order450-copy"'):errors.append("Personal button must precede optional copy")
-if a.ids.get("personal-top",{}).get("href")!="#personal-contacts":errors.append("Top personal action target wrong")
-if "&amp;amp;" in html:errors.append("Double-escaped mailto ampersand breaks email body")
-if a.ids.get("quick-id-photo",{}).get("href")!="#order450":errors.append("450 shortcut must lead directly to photo attachment options")
-if a.ids.get("promo450-cta",{}).get("href")!="#order450":errors.append("450 CTA target changed")
-if 'id="order450-extra"' not in html or 'Нужен готовый подробный текст?' not in html:errors.append("Detailed text must be optional")
-if 'Где прикрепить фотографию?' not in html or 'скрепку' not in html:errors.append("Photo upload instructions missing")
-if not all(name in html for name in ("ВКонтакте","MAX","Электронная почта","Telegram")):errors.append("Personal message choices incomplete")
-if html.index('id="direct-vk"')>html.index('id="order450-copy"'):errors.append("Personal choices must precede optional copy")
-
-if html.index('id="order450"')>html.index('id="how-title"'):errors.append("450 order link must be directly under bots")
-if '3×4 см' not in html or '6 фотографий на 10×15' not in html:errors.append("450 offer scope is unclear")
-if 'без фотосъёмки' not in html.lower():errors.append("450 must be distinguished from studio photography")
-
-if html.index('id="quick-print-photo"') > html.index('id="bot-vk"'):errors.append("Photo print shortcut is not prominent")
-if html.index('id="quick-id-photo"') > html.index('id="bot-vk"'):errors.append("ID photo shortcut is not prominent")
-if html.index('id="order-selection"') < html.index('id="bot-tg"'):errors.append("Optional service details must not hide bot buttons")
-
-if 'class="faq section"' not in html or 'id="faq-title"' not in html:errors.append("FAQ section missing")
-if html.count('data-service="photo"')<1 or html.count('data-service="docs"')<1:errors.append("Service selection anchors missing")
-if html.count('data-service="photo10x15"')<1 or html.count('data-service="docsA4bw"')<1:errors.append("Precise service shortcuts missing")
-if 'order-selection-text' not in html or 'copy-service' not in html:errors.append("Order guidance tools missing")
-if 'Окончательную стоимость' not in html and 'окончательную цену' not in html:errors.append("Price transparency notice missing")
-if 'На этой странице нет онлайн-оплаты' not in html:errors.append("False checkout claims risk")
-
-if html.count('href="#bots"')<4:errors.append("Service selection links missing")
-if html.count('<meta name="referrer" content="no-referrer">')!=1:errors.append("Referrer policy missing")
-if html.count('<link rel="icon"')!=1:errors.append("Favicon missing")
-if not any(x.get("href")=="site.webmanifest" for x in a.references):errors.append("Manifest missing")
-csp=a.meta.get("content-security-policy","")
-for must in ("default-src 'none'","script-src 'self'","style-src 'self'","object-src 'none'","form-action 'none'","base-uri 'none'","connect-src 'none'"):
- if must not in csp:errors.append("CSP missing "+must)
-if "unsafe-inline" in csp or "unsafe-eval" in csp:errors.append("Unsafe CSP keyword")
-if len(a.scripts)!=2 or any(s.get("src") not in (None,"assets/site-v4.js") for s in a.scripts):errors.append("Unexpected script count")
-if any(term in js for term in ("eval(","new Function(","document.write(","innerHTML","XMLHttpRequest","localStorage","sessionStorage")):errors.append("Unsafe client JavaScript capability")
-if "url(\"assets/" in css:errors.append("Wrong font path in external CSS")
-for asset in ("assets/fotomag_logo_official.svg","assets/FotoMag_FACADE_APPROVED_web.webp","assets/manrope-cyrillic.woff2","assets/manrope-latin.woff2","assets/site-v4.css","assets/site-v4.js"):
- if not (ROOT/asset).is_file():errors.append("Required asset missing: "+asset)
-manifest=json.loads((ROOT/"site.webmanifest").read_text(encoding="utf-8"))
-if manifest.get("start_url")!="./" or manifest.get("scope")!="./":errors.append("Manifest scope unexpected")
-if any(not (ROOT/i.get("src","")).is_file() for i in manifest.get("icons",[])):errors.append("Manifest icons missing")
-# Never emit actual suspected sensitive values into logs.
-for p in (ROOT/"index.html",ROOT/"assets/site-v4.js",ROOT/"assets/site-v4.css",ROOT/"README.md"):
- data=p.read_text(encoding="utf-8",errors="ignore")
- if re.search(r'ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{80,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA )?PRIVATE KEY-----',data):
-  errors.append("Potential embedded credential in "+p.name)
+for f in (HTML,CSS,JS,ROOT/'assets/fotomag_logo_official.svg',ROOT/'assets/FotoMag_FACADE_APPROVED_web.webp',ROOT/'site.webmanifest'):
+    if not f.exists():errors.append('Required asset missing: '+str(f.relative_to(ROOT)))
 if errors:
- print("FAILED FotoMag security guardrails:\n"+"\n".join("- "+e for e in errors))
- sys.exit(1)
-print("PASS: FotoMag link allowlist, CSP, asset integrity, safe client code and release manifest.")
+    print('\n'.join(errors));sys.exit(1)
+html=HTML.read_text(encoding='utf-8')
+css=CSS.read_text(encoding='utf-8')
+js=JS.read_text(encoding='utf-8')
+allowed_hosts={'vk.com','t.me','max.ru','yandex.com','kantstovary-dlja-shkoly-i.clients.site'}
+required_links={
+ 'bot-vk':'https://vk.com/write-20848548',
+ 'bot-max':'https://max.ru/id180904019369_bot',
+ 'bot-tg':'https://t.me/fotomag_orders_bot',
+ 'direct-vk':'https://vk.com/write103477713',
+ 'direct-max':'https://max.ru/u/f9LHodD0cOJ4xQH5eXwmG7FE-sm42CyZd4DzqF_2BbIDG9GFNtKI4fbc5LU',
+ 'direct-email':'mailto:kodakprint@yandex.ru?subject=FotoMag%20%E2%80%94%20%D0%BB%D0%B8%D1%87%D0%BD%D0%BE%D0%B5%20%D1%81%D0%BE%D0%BE%D0%B1%D1%89%D0%B5%D0%BD%D0%B8%D0%B5',
+ 'direct-tg':'https://t.me/Gug18aa',
+ 'map-route':'https://yandex.com/maps/org/fotomag/1005628718/?lang=ru',
+ 'store-photo-map':'https://yandex.com/maps/org/fotomag/1005628718/?lang=ru',
+ 'quick-bot-vk':'https://vk.com/write-20848548',
+ 'quick-bot-max':'https://max.ru/id180904019369_bot',
+ 'quick-bot-tg':'https://t.me/fotomag_orders_bot',
+}
+class Auditor(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.links=[];self.buttons=[];self.scripts=[];self.templates=[];self.meta={};self.css=[];self.images=[];self.h1=0;self.main=0
+    def handle_starttag(self,tag,attrs):
+        a=dict(attrs)
+        for name,value in attrs:
+            if name.lower().startswith('on'):errors.append('Inline event handler: '+str(name))
+            if name.lower()=='style':errors.append('Inline style detected')
+        if tag=='script':
+            self.scripts.append(a)
+            if not (a.get('src')=='assets/app-shell.js' or (a.get('type')=='application/ld+json' and not a.get('src'))):errors.append('Unexpected script tag')
+        if tag in ('form','iframe','object','embed','base'):
+            errors.append('Forbidden HTML element '+tag)
+        if tag=='style':errors.append('Inline style not permitted')
+        if tag=='template':self.templates.append(a.get('id'))
+        if tag=='meta' and 'http-equiv' in a:self.meta[a['http-equiv'].lower()]=a.get('content','')
+        if tag=='link':self.css.append(a)
+        if tag=='img':self.images.append(a)
+        if tag=='main':self.main+=1
+        if tag=='h1':self.h1+=1
+        if tag=='button':self.buttons.append(a)
+        if tag=='a':
+            href=a.get('href','')
+            self.links.append(a)
+            if href.startswith('#'):pass
+            elif href.startswith('tel:'):
+                if href!='tel:+79124665090':errors.append('Unexpected telephone destination')
+            elif href.startswith('mailto:'):
+                if not href.startswith('mailto:kodakprint@yandex.ru'):errors.append('Unexpected email destination')
+                if '\n' in href or '\r' in href:errors.append('Unsafe email link')
+            else:
+                u=urlsplit(href)
+                if u.scheme!='https' or u.hostname not in allowed_hosts or u.username or u.password:errors.append('Unapproved URL host / scheme')
+            if a.get('target')=='_blank' and not all(x in a.get('rel','').split() for x in ('noopener','noreferrer')):
+                errors.append('Unsafe new tab link')
+a=Auditor();a.feed(html)
+if a.main!=1 or a.h1!=1:errors.append('Main/heading hierarchy mismatch')
+if html.count('data-action="photos"')<1 or html.count('data-action="id450"')<1:errors.append('First-screen services missing')
+if len([x for x in a.buttons if 'app-tile' in x.get('class','').split()])!=6:errors.append('Expected exactly 6 smartphone tiles')
+if len([x for x in a.buttons if 'dock-btn' in x.get('class','').split()])!=4:errors.append('Expected exactly 4 dock navigation buttons')
+for name in ('photos','id450','documents','studio','shop','personal','bots','location','prices','help'):
+    if 'screen-'+name not in a.templates:errors.append('Service screen missing: '+name)
+for key,url in required_links.items():
+    links=[x['href'] for x in a.links if x.get('id')==key]
+    if not links or any(h!=url for h in links):errors.append('Critical link mismatch: '+key)
+# Check the HTML also preserves service discovery routes in its nonexecutable templates.
+for s in ('Фото на документы','450 ₽','35 ₽','55 ₽','750 ₽','850 ₽','35×45','8 шт.','3×4','6 шт.','4×6','4 шт.','любом фоне','Белый фон','Ровные плечи','В разработке','Не показываем неподтверждённые'):
+    if s not in html:errors.append('Expected service text missing: '+s)
+if 'id="store-photo-map"' not in html or 'assets/FotoMag_FACADE_APPROVED_web.webp' not in html:errors.append('Store location photo missing')
+# Guard against burying the primary bot action under all app tiles.
+idx_bot=html.find('id="bot-primary-cta"')
+idx_grid=html.find('class="app-grid"')
+if idx_bot < 0 or idx_grid < 0 or idx_bot>idx_grid:errors.append('Primary bot ordering action must be before app tiles')
+if html.count('class="quick-bot"')!=3:errors.append('Direct bot choices under primary action missing')
+if len(re.findall(r'data-format="(?:35x45|3x4|4x6)"',html))!=3:errors.append('Three photo formats selector missing')
+if 'id="id-format-summary"' not in html or 'id="copy-order450"' not in html:errors.append('Dynamic format summary and copy control missing')
+if 'id="id450-personal"' not in html:errors.append('Personal order action missing in photo service')
+if html.count('id="order450-vk"') or html.count('id="order450-max"'):errors.append('Duplicate personal links in photo order: use personal screen only')
+if 'portrait-demo' not in html or 'ФОТОСТУДИЙНАЯ ПОДГОТОВКА' not in html:errors.append('Studio processing promo missing')
+if 'formatOptions' not in js or 'updateFormatUI' not in js:errors.append('Photo size selection not wired')
+if 'fetch(' in js or 'XMLHttpRequest' in js or 'localStorage' in js:errors.append('Unexpected data upload or persistent storage')
+
+if any('alt' not in img for img in a.images):errors.append('Image alt text missing')
+if html.count('<meta http-equiv="Content-Security-Policy"')>1:errors.append('Duplicated CSP policy')
+csp=a.meta.get('content-security-policy','')
+for keyword in ("default-src 'none'","script-src 'self'","style-src 'self'","object-src 'none'","form-action 'none'","connect-src 'none'","base-uri 'none'"):
+    if keyword not in csp:errors.append('CSP is too broad: '+keyword)
+if 'unsafe-inline' in csp or 'unsafe-eval' in csp:errors.append('Unsafe CSP keyword')
+if not any(x.get('href')=='assets/app-shell.css' and x.get('rel')=='stylesheet' for x in a.css):errors.append('Self-hosted stylesheet missing')
+if not any(x.get('href')=='site.webmanifest' for x in a.css):errors.append('PWA manifest missing')
+if not any(x.get('href')=='assets/fotomag_logo_official.svg' and x.get('rel')=='icon' for x in a.css):errors.append('Official favicon missing')
+if len(a.scripts)!=2:errors.append('Unexpected script count')
+if 'innerHTML' in js or 'eval(' in js or 'new Function(' in js or 'document.write(' in js:errors.append('Unsafe dynamic executable HTML')
+if any(x in js for x in ('XMLHttpRequest','localStorage','sessionStorage','fetch(')):errors.append('Unexpected data transfer/storage capability')
+if '.app-tile.pressed' not in css or '.dock-btn.pressed' not in css or '.quick-bot.pressed' not in css:errors.append('Smartphone press animation missing')
+if 'history.pushState' not in js or "'#direct':'personal'" not in js:errors.append('Old deep-link compatibility missing')
+if '&amp;amp;' in html:errors.append('Double encoded email link')
+manifest=json.loads((ROOT/'site.webmanifest').read_text(encoding='utf-8'))
+if manifest.get('start_url')!='./' or manifest.get('scope')!='./':errors.append('Manifest scope unexpected')
+for f in [HTML,CSS,JS]:
+    t=f.read_text(encoding='utf-8')
+    if re.search(r'ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{80,}|AKIA[0-9A-Z]{16}|-----BEGIN (?:RSA )?PRIVATE KEY-----',t):errors.append('Possible secret in '+f.name)
+if errors:
+    print('BLOCKED FotoMag Smartphone release:\n'+'\n'.join(' - '+e for e in errors))
+    sys.exit(1)
+print('PASS FotoMag Smartphone: service tiles, routes, approved links, accessible contacts, CSP, no client uploads, SEO and assets.')
