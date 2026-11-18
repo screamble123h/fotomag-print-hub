@@ -18,9 +18,6 @@ required={
  "direct-max":"https://max.ru/u/f9LHodD0cOJ4xQH5eXwmG7FE-sm42CyZd4DzqF_2BbIDG9GFNtKI4fbc5LU",
  "store-photo-map":"https://yandex.com/maps/org/fotomag/1005628718/?lang=ru",
  "map-route":"https://yandex.com/maps/org/fotomag/1005628718/?lang=ru",
- "order450-vk":"https://vk.com/write103477713",
- "order450-telegram":"https://t.me/Gug18aa",
- "order450-max":"https://max.ru/u/f9LHodD0cOJ4xQH5eXwmG7FE-sm42CyZd4DzqF_2BbIDG9GFNtKI4fbc5LU",
 }
 allowed_hosts={"vk.com","vk.ru","t.me","max.ru","yandex.com","kantstovary-dlja-shkoly-i.clients.site"}
 errors=[]
@@ -58,6 +55,8 @@ a=Analyzer();a.feed(html)
 for key,url in required.items():
  if a.ids.get(key,{}).get("href")!=url:errors.append("Critical link mismatch: "+key)
 if "class=\"order__phone\"" not in html:errors.append("Visible telephone missing")
+if '<details id="direct"' in html:errors.append("Old redundant personal panel remains")
+if 'id="direct"' not in html:errors.append("Old personal URL alias missing")
 if 'class="offers section"' not in html or 'id="prices-title"' not in html:errors.append("Services and prices section missing")
 if 'id="quick-print-photo"' not in html or 'id="quick-id-photo"' not in html:errors.append("Photo services must be visible on the first screen")
 if 'id="photo-print"' not in html or 'id="id-photo"' not in html:errors.append("Photo printing or ID photo service detail missing")
@@ -66,16 +65,20 @@ if 'id="faq-id-photo"' not in html:errors.append("Passport photo FAQ missing")
 if 'id="promo450"' not in html or 'id="promo450-cta"' not in html:errors.append("450 promo missing")
 if 'id="order450"' not in html or 'id="order450-request-text"' not in html:errors.append("450 order form missing")
 if 'id="order450-copy"' not in html or 'id="order450-copy-status"' not in html:errors.append("450 copy controls missing")
-if 'id="order450-max"' not in html or 'id="order450-vk"' not in html or 'id="order450-telegram"' not in html:errors.append("450 direct messenger options missing")
-if 'id="order450-email"' not in html or 'id="faq-online450"' not in html:errors.append("450 email / FAQ missing")
-if a.ids.get("order450-email",{}).get("href","").startswith("mailto:kodakprint@yandex.ru?subject=") is False:errors.append("450 email target changed")
+if 'id="personal-top"' not in html or 'id="personal-contacts"' not in html:errors.append("Personal button or expandable panel missing")
+if 'id="personal-send-trigger"' not in html or 'Отправить лично' not in html:errors.append("Personal button wording missing")
+if 'id="faq-online450"' not in html:errors.append("450 FAQ missing")
+if a.ids.get("direct-email",{}).get("href","").startswith("mailto:kodakprint@yandex.ru?subject=") is False:errors.append("Personal email target changed")
+if html.count('id="personal-contacts"')!=1 or html.count('class="personal-contacts__link"')!=4:errors.append("Expected one personal panel with four ways to contact")
+if html.index('id="personal-contacts"')>html.index('id="order450-copy"'):errors.append("Personal button must precede optional copy")
+if a.ids.get("personal-top",{}).get("href")!="#personal-contacts":errors.append("Top personal action target wrong")
 if "&amp;amp;" in html:errors.append("Double-escaped mailto ampersand breaks email body")
 if a.ids.get("quick-id-photo",{}).get("href")!="#order450":errors.append("450 shortcut must lead directly to photo attachment options")
 if a.ids.get("promo450-cta",{}).get("href")!="#order450":errors.append("450 CTA target changed")
 if 'id="order450-extra"' not in html or 'Нужен готовый подробный текст?' not in html:errors.append("Detailed text must be optional")
 if 'Где прикрепить фотографию?' not in html or 'скрепку' not in html:errors.append("Photo upload instructions missing")
-if 'Отправить фото в Telegram' not in html or 'Отправить фото в MAX' not in html or 'Отправить фото ВКонтакте' not in html:errors.append("Direct send actions unclear")
-if html.index('id="order450-telegram"') > html.index('id="order450-copy"'):errors.append("Messaging actions must precede optional copy")
+if not all(name in html for name in ("ВКонтакте","MAX","Электронная почта","Telegram")):errors.append("Personal message choices incomplete")
+if html.index('id="direct-vk"')>html.index('id="order450-copy"'):errors.append("Personal choices must precede optional copy")
 
 if html.index('id="order450"')>html.index('id="how-title"'):errors.append("450 order link must be directly under bots")
 if '3×4 см' not in html or '6 фотографий на 10×15' not in html:errors.append("450 offer scope is unclear")
