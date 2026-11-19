@@ -34,14 +34,12 @@
   let messageTimer;
   let openTimer;
   let selectedFormat = '35x45';
-  let personalContext = 'general';
   const formatOptions = Object.freeze({
     '35x45': {label:'35×45 мм',count:8},
     '3x4': {label:'3×4 см',count:6},
     '4x6': {label:'4×6 см',count:4}
   });
-  function makeOrderText(){
-    const option=formatOptions[selectedFormat];
+  function makeOrderText(option){
     return `Здравствуйте! Фото на документы с моей фотографии на любом фоне. Формат ${option.label}, ${option.count} шт. на листе 10×15 см. Услуга 450 ₽. Фото прикрепляю. Подтвердите, пожалуйста, подходит ли снимок и когда будет готово.`;
   }
   function updateFormatUI(){
@@ -56,12 +54,12 @@
     const copy=sheetBody.querySelector('#copy-order450');
     if(copy) copy.dataset.copy=`Фото на документы ${option.label}, ${option.count} шт. — 450 ₽`;
   }
-  function updatePersonalContext(){
+  function updatePersonalContext(option){
     const note=sheetBody.querySelector('#personal-service-context');
     const email=sheetBody.querySelector('#direct-email');
-    if(personalContext==='id450'){
-      if(note) note.textContent=`Фото на документы за 450 ₽. ${formatOptions[selectedFormat].label} — ${formatOptions[selectedFormat].count} шт. на 10×15. Прикрепите снимок с любого фона в чате и дождитесь подтверждения.`;
-      if(email) email.href='mailto:kodakprint@yandex.ru?subject='+encodeURIComponent('FotoMag — фото на документы 450 ₽')+'&body='+encodeURIComponent(makeOrderText());
+    if(option){
+      if(note) note.textContent=`Фото на документы за 450 ₽. ${option.label} — ${option.count} шт. на 10×15. Прикрепите снимок с любого фона в чате и дождитесь подтверждения.`;
+      if(email) email.href='mailto:kodakprint@yandex.ru?subject='+encodeURIComponent('FotoMag — фото на документы 450 ₽')+'&body='+encodeURIComponent(makeOrderText(option));
     } else {
       if(note) note.textContent='Выберите способ связи и прикрепите фотографию или документ в открывшемся приложении.';
     }
@@ -92,13 +90,11 @@
     clearTimeout(openTimer);
     const previous = document.activeElement;
     active = section;
-    if(section==='id450') personalContext='id450';
-    else if(!['personal','bots'].includes(section)) personalContext='general';
     sheetKicker.textContent = config.kicker;
     sheetTitle.textContent = config.title;
     sheetBody.replaceChildren(template.content.cloneNode(true));
     if(section==='id450') updateFormatUI();
-    if(section==='personal') updatePersonalContext();
+    if(section==='personal') updatePersonalContext(options.orderFormat);
     const sourceIcon = document.querySelector(`[data-action="${config.icon}"] .tile-icon svg`) ||
       document.querySelector(`[data-action="${config.icon}"] .dock-icon svg`);
     sheetIcon.replaceChildren();
@@ -131,17 +127,19 @@
     closeView({ resetHash: true });
     scroll.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function navigate(section) {
+  function navigate(section, orderFormat) {
     if (section === 'home') return showHome();
     if (sections[section]) {
-      openTimer = setTimeout(() => openView(section), 95);
+      clearTimeout(openTimer);
+      openTimer = setTimeout(() => openView(section, { orderFormat }), 95);
     }
   }
   document.addEventListener('click', event => {
     const trigger = event.target.closest('[data-action]');
     if (trigger && (!trigger.closest('#sheet-body') || trigger.hasAttribute('data-sheet-nav'))) {
       event.preventDefault();
-      navigate(trigger.dataset.action);
+      const orderFormat = trigger.id === 'id450-personal' ? formatOptions[selectedFormat] : undefined;
+      navigate(trigger.dataset.action, orderFormat);
       return;
     }
     const format=event.target.closest('[data-format]');
