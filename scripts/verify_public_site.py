@@ -17,6 +17,7 @@ html=HTML.read_text(encoding='utf-8')
 css=CSS.read_text(encoding='utf-8')
 js=JS.read_text(encoding='utf-8')
 allowed_hosts={'vk.com','t.me','max.ru','yandex.com','kantstovary-dlja-shkoly-i.clients.site'}
+store_2gis='https://2gis.ru/izhevsk/firm/70000001061965152'
 required_links={
  'bot-vk':'https://vk.com/write-20848548',
  'bot-max':'https://max.ru/id180904019369_bot',
@@ -25,6 +26,8 @@ required_links={
  'direct-max':'https://max.ru/u/f9LHodD0cOJ4xQH5eXwmG7FE-sm42CyZd4DzqF_2BbIDG9GFNtKI4fbc5LU',
  'direct-email':'mailto:kodakprint@yandex.ru?subject=FotoMag%20%E2%80%94%20%D0%BB%D0%B8%D1%87%D0%BD%D0%BE%D0%B5%20%D1%81%D0%BE%D0%BE%D0%B1%D1%89%D0%B5%D0%BD%D0%B8%D0%B5',
  'direct-tg':'https://t.me/Gug18aa',
+ 'studio-2gis':store_2gis,
+ 'location-2gis':store_2gis,
  'map-route':'https://yandex.com/maps/org/fotomag/1005628718/?lang=ru',
  'store-photo-map':'https://yandex.com/maps/org/fotomag/1005628718/?lang=ru',
  'quick-bot-vk':'https://vk.com/write-20848548',
@@ -64,7 +67,7 @@ class Auditor(HTMLParser):
                 if '\n' in href or '\r' in href:errors.append('Unsafe email link')
             else:
                 u=urlsplit(href)
-                if u.scheme!='https' or u.hostname not in allowed_hosts or u.username or u.password:errors.append('Unapproved URL host / scheme')
+                if href != store_2gis and (u.scheme!='https' or u.hostname not in allowed_hosts or u.username or u.password):errors.append('Unapproved URL host / scheme')
             if a.get('target')=='_blank' and not all(x in a.get('rel','').split() for x in ('noopener','noreferrer')):
                 errors.append('Unsafe new tab link')
 a=Auditor();a.feed(html)
