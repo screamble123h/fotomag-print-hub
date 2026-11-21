@@ -1,4 +1,4 @@
-"""FotoMag web-channel receiver: archive orders in D:\2026\DATE\Напрямую\CLIENT.
+r"""FotoMag web-channel receiver: archive orders in D:\2026\DATE\Напрямую\CLIENT.
 
 This only downloads pending web orders from a separate HTTPS queue. Never
 opens/prints files, modifies legacy bot data, or overwrites existing files.
