@@ -38,6 +38,16 @@
       ? "Канал «Напрямую»: файлы будут доставлены на компьютер FotoMag, разложены по датам и отдельным папкам клиентов. Печать после проверки сотрудником."
       : "Прямая отправка готовится к запуску. Сейчас воспользуйтесь VK, MAX или Telegram ниже.";
     updateFiles();
+    updateKindChoices();
+  }
+
+  function updateKindChoices() {
+    const selected = get("upload-kind")?.value;
+    for (const button of document.querySelectorAll("#direct-upload-form [data-upload-choice]")) {
+      const active = button.dataset.uploadChoice === selected;
+      button.classList.toggle("is-selected", active);
+      button.setAttribute("aria-pressed", String(active));
+    }
   }
 
   function updateFiles() {
@@ -46,8 +56,27 @@
     const files = selectedFiles();
     const bytes = files.reduce((n, f) => n + f.size, 0);
     line.textContent = files.length
-      ? "Выбрано файлов: " + files.length + " · " + humanSize(bytes)
-      : "Можно выбрать до 10 файлов: JPG, PNG, WEBP, HEIC, PDF, DOCX, XLSX.";
+      ? "Выбрано: " + files.length + " файл(ов) · " + humanSize(bytes)
+      : "JPG, PNG, WEBP, HEIC, PDF, DOCX, XLSX · до 25 МБ каждый.";
+    const list = get("upload-file-list");
+    if (!list) return;
+    list.replaceChildren();
+    for (const file of files.slice(0, 4)) {
+      const item = document.createElement("li");
+      const name = document.createElement("span");
+      name.className = "upload-file-name";
+      name.textContent = file.name;
+      const size = document.createElement("span");
+      size.className = "upload-file-size";
+      size.textContent = humanSize(file.size);
+      item.append(name, size);
+      list.appendChild(item);
+    }
+    if (files.length > 4) {
+      const more = document.createElement("li");
+      more.textContent = "И ещё " + (files.length - 4) + " файл(ов)";
+      list.appendChild(more);
+    }
   }
 
   function validate(files) {
@@ -176,6 +205,7 @@
       void waitForWorkstation(created.order_id, created.upload_token, answer.receipt);
       form.reset();
       updateFiles();
+      updateKindChoices();
       if (submit) submit.textContent = "Отправить ещё файлы";
     } catch (error) {
       status((error?.message || "Ошибка отправки.") +
@@ -185,6 +215,16 @@
       if (submit) submit.disabled = !endpoint;
     }
   }
+
+  document.addEventListener("click", event => {
+    const choice = event.target.closest("#direct-upload-form [data-upload-choice]");
+    if (!choice) return;
+    const kind = choice.dataset.uploadChoice;
+    if (!["photos", "documents", "id450"].includes(kind)) return;
+    const value = get("upload-kind");
+    if (value) value.value = kind;
+    updateKindChoices();
+  });
 
   document.addEventListener("change", event => {
     if (event.target.id === "upload-files") updateFiles();
