@@ -109,7 +109,7 @@ def check_upload_ui(page, url):
         page.locator(selector).click()
         expect(page.locator("#upload-kind")).to_have_value(kind)
         if kind == "id450":
-            expect(page.locator("#upload-comment")).to_contain_text("35×45 мм")
+            expect(page.locator("#upload-comment")).to_have_value("Фото на документы 35×45 мм, 8 шт. — 450 ₽")
         page.locator("#sheet-close").click()
     page.goto(url + "#send-files")
     expect(page.locator("#upload-submit")).to_be_disabled()
