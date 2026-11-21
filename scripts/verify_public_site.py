@@ -104,7 +104,7 @@ if 'fetch(' in js or 'XMLHttpRequest' in js or 'localStorage' in js:errors.appen
 if any('alt' not in img for img in a.images):errors.append('Image alt text missing')
 if html.count('<meta http-equiv="Content-Security-Policy"')>1:errors.append('Duplicated CSP policy')
 csp=a.meta.get('content-security-policy','')
-for keyword in ("default-src 'none'","script-src 'self'","style-src 'self'","object-src 'none'","form-action 'none'","connect-src 'none'","base-uri 'none'"):
+for keyword in ("default-src 'none'","script-src 'self'","style-src 'self'","object-src 'none'","form-action 'none'","base-uri 'none'"):
     if keyword not in csp:errors.append('CSP is too broad: '+keyword)
 if 'unsafe-inline' in csp or 'unsafe-eval' in csp:errors.append('Unsafe CSP keyword')
 if not any(x.get('href')=='assets/app-shell.css' and x.get('rel')=='stylesheet' for x in a.css):errors.append('Self-hosted stylesheet missing')
@@ -130,8 +130,11 @@ elif api_meta.group(1):
     configured=urlsplit(api_meta.group(1))
     if configured.scheme!='https' or not configured.netloc or configured.username or configured.password:
         errors.append('API endpoint must use HTTPS')
-    if 'connect-src '+configured.scheme+'://'+configured.netloc not in csp:
-        errors.append('CSP must pin the approved API origin')
+    api_origin=configured.scheme+'://'+configured.netloc
+    directive=re.search(r'(?:^|;\s*)connect-src\s+([^;]+)',csp)
+    sources=directive.group(1).split() if directive else []
+    if set(sources) not in ({api_origin},{api_origin,"'self'"}):
+        errors.append('CSP must allow ONLY the approved HTTPS API origin, optionally self')
     if 'Перед запуском услуги' in html or not (ROOT/'privacy.html').is_file():
         errors.append('Legal operator/privacy information required before live API activation')
 else:
