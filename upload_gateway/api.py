@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+from contextlib import contextmanager
 import os
 import re
 import secrets
@@ -63,16 +64,24 @@ async def security_headers(request: Request, call_next):
     return response
 
 
+@contextmanager
 def db():
     connection = sqlite3.connect(str(DB), timeout=15)
     connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA journal_mode=WAL")
     connection.execute("PRAGMA busy_timeout=15000")
-    return connection
+    try:
+        yield connection
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def initialize():
     with db() as c:
+        c.execute("PRAGMA journal_mode=WAL")
         c.executescript("""
             CREATE TABLE IF NOT EXISTS orders (
                 id TEXT PRIMARY KEY, receipt TEXT UNIQUE NOT NULL,
@@ -291,6 +300,18 @@ def submit_order(order_id: str, authorization: str | None = Header(default=None)
             reject(409, "Не все файлы загружены")
         c.execute("UPDATE orders SET status='pending' WHERE id=?", (order_id,))
     return {"received": True, "receipt": order["receipt"], "status": "queued"}
+
+
+@app.get("/api/orders/{order_id}/status")
+def order_status(order_id: str, authorization: str | None = Header(default=None)):
+    """Client may check only its own receipt; no names/phones are disclosed."""
+    with db() as c:
+        row = require_order(order_id, authorization, c)
+        return {
+            "receipt": row["receipt"],
+            "status": row["status"],
+            "downloaded_to_pc": row["status"] == "received",
+        }
 
 
 @app.get("/api/agent/orders")
