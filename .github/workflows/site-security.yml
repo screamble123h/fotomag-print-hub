@@ -71,4 +71,4 @@ jobs:
         run: |
           docker run --rm -e FOTOMAG_API_DOMAIN=files.example.ru \
             -v "$PWD/upload_gateway/Caddyfile:/etc/caddy/Caddyfile:ro" \
-            caddy:2-alpine adapt --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+            caddy:2-alpine caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
