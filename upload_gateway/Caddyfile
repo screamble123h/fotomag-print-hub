@@ -1,0 +1,8 @@
+{$FOTOMAG_API_DOMAIN} {
+    encode zstd gzip
+    @api path /api/*
+    handle @api {
+        reverse_proxy gateway:8000
+    }
+    respond "Not found" 404
+}
