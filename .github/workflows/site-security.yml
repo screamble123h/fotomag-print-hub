@@ -19,6 +19,8 @@ jobs:
           persist-credentials: false
       - name: Verify public page and safe destinations
         run: python3 scripts/verify_public_site.py
+      - name: Enforce small initial page budget
+        run: python3 scripts/verify_performance_budget.py
       - name: Test private gateway with synthetic files only
         run: |
           python3 -m venv "$RUNNER_TEMP/fotomag-gateway"
