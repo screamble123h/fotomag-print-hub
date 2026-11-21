@@ -6,9 +6,11 @@ import tempfile
 os.environ["FOTOMAG_DATA_DIR"] = tempfile.mkdtemp(prefix="fotomag-api-test-")
 os.environ["FOTOMAG_AGENT_TOKEN"] = "test" + ("Z" * 64)
 os.environ["FOTOMAG_SITE_ORIGIN"] = "https://screamble123h.github.io"
+os.environ["FOTOMAG_UPLOAD_MODE"] = "staging"
 
 from fastapi.testclient import TestClient  # noqa: E402
 from upload_gateway.api import app  # noqa: E402
+import upload_gateway.api as gateway_api  # noqa: E402
 
 client = TestClient(app)
 ORIGIN = {"Origin": "https://screamble123h.github.io"}
@@ -139,3 +141,49 @@ def test_upload_rejects_invalid_ownership_and_cross_origin():
         "Origin": "https://attack.test",
         "Authorization": "Bearer " + created["upload_token"],
     }).status_code == 403
+
+
+def test_disabled_mode_fails_closed(monkeypatch):
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "disabled")
+    response = new_order()
+    assert response.status_code == 503
+    assert client.get("/api/health").status_code == 200
+
+
+def test_production_antivirus_clears_before_queue(monkeypatch):
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "production")
+    monkeypatch.setenv("FOTOMAG_CLAMD_HOST", "internal-av.invalid")
+    calls = []
+    monkeypatch.setattr(gateway_api, "scan_file", lambda path: calls.append(path))
+    created = new_order().json()
+    headers = {**ORIGIN, "Authorization": "Bearer " + created["upload_token"]}
+    file_id = created["files"][0]["file_id"]
+    uploaded = client.put(
+        f"/api/orders/{created['order_id']}/files/{file_id}",
+        content=JPEG, headers=headers,
+    )
+    assert uploaded.status_code == 200
+    sent = client.post(f"/api/orders/{created['order_id']}/submit", headers=headers)
+    assert sent.status_code == 200, sent.text
+    assert len(calls) == 1
+
+
+def test_production_antivirus_unavailable_keeps_order_hidden(monkeypatch):
+    from upload_gateway.antivirus import ScannerUnavailable
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "production")
+    monkeypatch.setenv("FOTOMAG_CLAMD_HOST", "internal-av.invalid")
+    def broken(_):
+        raise ScannerUnavailable("scanner offline")
+    monkeypatch.setattr(gateway_api, "scan_file", broken)
+    created = new_order().json()
+    headers = {**ORIGIN, "Authorization": "Bearer " + created["upload_token"]}
+    assert client.put(
+        f"/api/orders/{created['order_id']}/files/{created['files'][0]['file_id']}",
+        content=JPEG, headers=headers,
+    ).status_code == 200
+    response = client.post(f"/api/orders/{created['order_id']}/submit",
+                           headers=headers)
+    assert response.status_code == 503
+    status = client.get(f"/api/orders/{created['order_id']}/status",
+                        headers=headers).json()
+    assert status["status"] == "uploading"
