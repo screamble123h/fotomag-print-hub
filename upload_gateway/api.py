@@ -299,15 +299,40 @@ async def upload_file(order_id: str, file_id: str, request: Request,
 @app.post("/api/orders/{order_id}/submit")
 def submit_order(order_id: str, authorization: str | None = Header(default=None)):
     with db() as c:
+        order = require_order(order_id, authorization, c)
+        if order["status"] not in ("uploading", "pending"):
+            reject(409, "Заявка уже обработана или отклонена")
+        if order["status"] == "pending":
+            return {"received": True, "receipt": order["receipt"], "status": "queued"}
+        files = c.execute(
+            "SELECT stored_path, uploaded_size, sha256 FROM files WHERE order_id=?",
+            (order_id,),
+        ).fetchall()
+    if not files or any(not f["stored_path"] or not f["sha256"] for f in files):
+        reject(409, "Не все файлы загружены")
+    for item in files:
+        full = (DATA / item["stored_path"]).resolve()
+        if not full.is_relative_to(UPLOADS) or not full.is_file():
+            reject(409, "Файл отсутствует на сервере")
+        if full.stat().st_size != item["uploaded_size"]:
+            reject(409, "Размер файла изменился")
+        if UPLOAD_MODE == "production":
+            try:
+                scan_file(full)
+            except ThreatDetected:
+                with db() as c:
+                    c.execute("UPDATE orders SET status='rejected' WHERE id=?",
+                              (order_id,))
+                reject(422, "Файл не прошёл проверку безопасности")
+            except ScannerUnavailable:
+                reject(503, "Антивирус временно недоступен. Отправка не подтверждена")
+        elif UPLOAD_MODE != "staging":
+            reject(503, "Приём файлов пока не включён")
+    with db() as c:
         c.execute("BEGIN IMMEDIATE")
         order = require_order(order_id, authorization, c)
         if order["status"] not in ("uploading", "pending"):
-            reject(409, "Заказ уже передан сотруднику")
-        missing = c.execute(
-            "SELECT COUNT(*) FROM files WHERE order_id=? AND uploaded_size IS NULL", (order_id,)
-        ).fetchone()[0]
-        if missing:
-            reject(409, "Не все файлы загружены")
+            reject(409, "Заявка уже обработана")
         c.execute("UPDATE orders SET status='pending' WHERE id=?", (order_id,))
     return {"received": True, "receipt": order["receipt"], "status": "queued"}
 
