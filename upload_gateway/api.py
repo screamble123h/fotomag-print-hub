@@ -25,7 +25,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from upload_gateway.antivirus import scan_file, ScannerUnavailable, ThreatDetected
+from upload_gateway.antivirus import scan_file, scanner_ready, ScannerUnavailable, ThreatDetected
 
 DATA = Path(os.environ.get("FOTOMAG_DATA_DIR", "/data")).resolve()
 AGENT_TOKEN = os.environ.get("FOTOMAG_AGENT_TOKEN", "")
@@ -188,7 +188,9 @@ def sniff(path: Path, ext: str) -> bool:
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "service": "fotomag-direct-upload"}
+    enabled = UPLOAD_MODE == "production" and scanner_ready()
+    return {"status": "ok", "service": "fotomag-direct-upload",
+            "accepting_uploads": enabled}
 
 
 @app.post("/api/orders", status_code=201)
@@ -271,6 +273,8 @@ def create_order(payload: IncomingOrder, request: Request):
 @app.put("/api/orders/{order_id}/files/{file_id}")
 async def upload_file(order_id: str, file_id: str, request: Request,
                       authorization: str | None = Header(default=None)):
+    if UPLOAD_MODE == "disabled":
+        reject(503, "Приём файлов временно отключён")
     if request.headers.get("origin") != SITE_ORIGIN:
         reject(403, "Недопустимый источник запроса")
     with db() as c:
@@ -321,6 +325,8 @@ async def upload_file(order_id: str, file_id: str, request: Request,
 
 @app.post("/api/orders/{order_id}/submit")
 def submit_order(order_id: str, authorization: str | None = Header(default=None)):
+    if UPLOAD_MODE == "disabled":
+        reject(503, "Приём файлов временно отключён")
     with db() as c:
         order = require_order(order_id, authorization, c)
         if order["status"] not in ("uploading", "pending"):
