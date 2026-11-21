@@ -14,6 +14,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
 
 API_URL = os.environ.get("FOTOMAG_API_URL", "").rstrip("/")
@@ -62,10 +63,8 @@ def receive_order(order: dict) -> None:
             if digest(target) != expected:
                 raise FileExistsError(f"Different file already exists: {target}")
             continue
-        temp = folder / (f".{index:02d}_" + file["file_id"] + ".part")
-        # Only agent-created temporary files may be rewritten on retries.
-        if temp.exists():
-            temp.unlink()
+        temp = folder / (f".{index:02d}_" + file["file_id"] + "." + uuid.uuid4().hex + ".part")
+        # Unique per attempt: never touch temp files left by a previous run.
         url = API_URL + "/api/agent/files/" + file["file_id"]
         req = urllib.request.Request(url, headers={"Authorization": "Bearer " + TOKEN})
         sha = hashlib.sha256()
@@ -85,7 +84,7 @@ def receive_order(order: dict) -> None:
                 raise ValueError("File integrity check failed")
             if target.exists():
                 raise FileExistsError(str(target))
-            temp.replace(target)
+            temp.rename(target)  # Windows refuses overwriting an existing target.
         except Exception:
             temp.unlink(missing_ok=True)
             raise
