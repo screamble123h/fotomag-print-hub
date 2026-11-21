@@ -166,4 +166,5 @@
     send(event.target);
   });
   window.FotoMagDirectUpload = Object.freeze({onView});
+  if (get('direct-upload-form')) onView(); // Deep link opened before deferred script executed.
 })();
