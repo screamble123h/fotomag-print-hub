@@ -25,7 +25,7 @@ jobs:
         run: |
           python3 -m venv "$RUNNER_TEMP/fotomag-gateway"
           "$RUNNER_TEMP/fotomag-gateway/bin/pip" install -r upload_gateway/requirements-dev.txt
-          "$RUNNER_TEMP/fotomag-gateway/bin/python" -m pytest -q upload_gateway/test_api.py upload_gateway/test_agent_archive.py
+          "$RUNNER_TEMP/fotomag-gateway/bin/python" -m pytest -q upload_gateway/test_api.py upload_gateway/test_agent_archive.py upload_gateway/test_antivirus.py
           "$RUNNER_TEMP/fotomag-gateway/bin/python" -m py_compile upload_gateway/workstation_agent.py
       - name: Test personal contact navigation in Chrome
         run: |
