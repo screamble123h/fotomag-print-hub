@@ -48,8 +48,7 @@
     }
     Promise.resolve(uploadScriptPromise).then(() => {
       if (sequence === uploadViewSequence && active === 'upload' && sheet.open)
-        // The upload script is loaded only after this view is opened.
-      initUploadView();
+        window.FotoMagDirectUpload?.onView();
     }).catch(() => {
       const note = sheetBody.querySelector('#upload-availability');
       if (sequence === uploadViewSequence && note)
@@ -131,7 +130,7 @@
           note.value='Фото на документы '+chosen.label+', '+chosen.count+' шт. — 450 ₽';
         }
       }
-      window.FotoMagDirectUpload?.onView();
+      initUploadView();
     }
     const sourceIcon = document.querySelector(`[data-action="${config.icon}"] .tile-icon svg`) ||
       document.querySelector(`[data-action="${config.icon}"] .dock-icon svg`);
