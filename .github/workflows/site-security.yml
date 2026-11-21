@@ -48,3 +48,27 @@ jobs:
           py -3 -m pip install "pytest>=8,<10"
           py -3 -m pytest -q upload_gateway/test_agent_archive.py
           py -3 -m py_compile upload_gateway/workstation_agent.py
+
+  gateway_deployment:
+    name: Validate gateway Compose and Caddy without opening ports
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout verified source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Validate Docker Compose with fake disabled-only configuration
+        run: |
+          cp upload_gateway/.env.example upload_gateway/.env
+          docker compose -f upload_gateway/compose.yaml config --quiet
+          if docker compose -f upload_gateway/compose.yaml config --format json | python3 -c "import json,sys;d=json.load(sys.stdin);assert 'ports' not in d['services']['gateway'];assert 'ports' not in d['services']['clamav'];assert len(d['services']['caddy']['ports'])==2;assert d['services']['gateway']['environment']['FOTOMAG_UPLOAD_MODE']=='disabled'"; then
+            echo "PASS: Gateway and ClamAV ports are private; intake defaults off"
+          else
+            exit 1
+          fi
+      - name: Validate public HTTPS Caddyfile syntax (no service launch)
+        run: |
+          docker run --rm -e FOTOMAG_API_DOMAIN=files.example.ru \
+            -v "$PWD/upload_gateway/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine adapt --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
