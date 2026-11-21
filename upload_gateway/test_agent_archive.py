@@ -59,6 +59,16 @@ def test_monthly_archive_template_and_name_sanitization(tmp_path):
         agent.order_destination(sample_order(), root, "../date")
 
 
+def test_real_D_path_preview_without_writing():
+    """Windows-specific read-only preview; never creates D: folders on CI."""
+    import os
+    if os.name != "nt":
+        pytest.skip("D: path semantics are Windows-specific")
+    path = agent.order_destination(sample_order(), Path(r"D:\2026"))
+    assert str(path).startswith("D:\\2026\\21.11.2026\\Напрямую\\Клиент_")
+    # Absolutely no mkdir(), no real order download and no test data on D:.
+
+
 def test_bad_receipt_rejected_without_creating_folders(tmp_path):
     root = tmp_path / "2026"
     root.mkdir()
