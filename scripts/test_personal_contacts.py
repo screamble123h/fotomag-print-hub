@@ -93,11 +93,13 @@ def check_general_entries(page, url):
 
 
 def check_upload_ui(page, url):
-    """No phantom success or client uploads before a private backend exists."""
+    """No phantom success; upload handler loads only after customer opens screen."""
+    assert page.evaluate("Boolean(window.FotoMagDirectUpload)") is False
     page.locator("#direct-upload-primary").click()
     expect(page.locator("#sheet-title")).to_have_text("Отправить файлы")
     expect(page.locator("#upload-submit")).to_be_disabled()
     expect(page.locator("#upload-availability")).to_contain_text("готовится к запуску")
+    assert page.evaluate("Boolean(window.FotoMagDirectUpload)") is True
     expect(page.locator("#upload-files")).to_have_attribute("multiple", "")
     expect(page.locator(".upload-heading")).to_have_text("Отправить файлы на печать")
     expect(page.locator(".upload-service-choice")).to_have_count(3)
