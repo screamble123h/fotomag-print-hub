@@ -32,6 +32,30 @@
   });
   const get = id => document.getElementById(id);
   let active = 'home';
+  let uploadScriptPromise;
+  let uploadViewSequence = 0;
+  function initUploadView() {
+    const sequence = ++uploadViewSequence;
+    if (!uploadScriptPromise && !window.FotoMagDirectUpload) {
+      uploadScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'assets/direct-upload.js';
+        script.async = true;
+        script.onload = () => window.FotoMagDirectUpload ? resolve() : reject(new Error('Upload unavailable'));
+        script.onerror = () => reject(new Error('Upload script unavailable'));
+        document.head.appendChild(script);
+      });
+    }
+    Promise.resolve(uploadScriptPromise).then(() => {
+      if (sequence === uploadViewSequence && active === 'upload' && sheet.open)
+        // The upload script is loaded only after this view is opened.
+      initUploadView();
+    }).catch(() => {
+      const note = sheetBody.querySelector('#upload-availability');
+      if (sequence === uploadViewSequence && note)
+        note.textContent = 'Загрузка раздела временно недоступна. Используйте VK, MAX или Telegram.';
+    });
+  }
   let messageTimer;
   let openTimer;
   let selectedFormat = '35x45';
