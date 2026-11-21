@@ -20,6 +20,8 @@
   const humanSize = bytes => (bytes / (1024 * 1024)).toFixed(1).replace(".", ",") + " МБ";
   let sending = false;
   let activeReceipt = "";
+  let readinessGeneration = 0;
+  let gatewayReady = false;
 
   function status(message, isError = false) {
     const line = get("upload-status");
@@ -29,16 +31,52 @@
   }
 
   function onView() {
-    activeReceipt = ""; // Do not update a newly opened screen from an old order poll.
+    activeReceipt = "";
+    const generation = ++readinessGeneration;
+    gatewayReady = false;
     const button = get("upload-submit");
     const note = get("upload-availability");
     if (!button || !note) return;
-    button.disabled = !endpoint;
+    button.disabled = true;
     note.textContent = endpoint
-      ? "Канал «Напрямую»: файлы будут доставлены на компьютер FotoMag, разложены по датам и отдельным папкам клиентов. Печать после проверки сотрудником."
-      : "Прямая отправка готовится к запуску. Сейчас воспользуйтесь VK, MAX или Telegram ниже.";
+      ? "Проверяем защищённое соединение с FotoMag…"
+      : "Прямая отправка готовится к запуску. Пока воспользуйтесь VK, MAX или Telegram ниже.";
     updateFiles();
     updateKindChoices();
+    if (endpoint) void checkReadiness(generation);
+  }
+
+  async function checkReadiness(generation) {
+    // Only run after the user opens this screen. Never delay the page's first paint.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6500);
+    try {
+      const response = await fetch(endpoint + "/api/health", {
+        method: "GET", credentials: "omit", mode: "cors", cache: "no-store",
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error("Gateway unavailable");
+      const result = await response.json();
+      if (generation !== readinessGeneration) return;
+      const button = get("upload-submit");
+      const note = get("upload-availability");
+      if (!button || !note) return;
+      gatewayReady = result.accepting_uploads === true;
+      button.disabled = !gatewayReady;
+      note.textContent = gatewayReady
+        ? "Защищённый приём FotoMag работает. Файлы отправятся напрямую и будут проверены перед получением на ПК."
+        : "Прямая отправка временно недоступна. Выберите резервный канал ниже.";
+    } catch (_) {
+      if (generation === readinessGeneration) {
+        gatewayReady = false;
+        const button = get("upload-submit");
+        const note = get("upload-availability");
+        if (button) button.disabled = true;
+        if (note) note.textContent = "Нет связи с приёмником. Файлы не отправлены, воспользуйтесь резервным каналом.";
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   function updateKindChoices() {
@@ -160,7 +198,7 @@
 
   async function send(form) {
     if (sending) return;
-    if (!endpoint) return status("Прямая отправка ещё не включена.", true);
+    if (!endpoint || !gatewayReady) return status("Защищённый приёмник ещё не готов.", true);
     const files = selectedFiles();
     const problem = validate(files);
     if (problem) return status(problem, true);
@@ -212,7 +250,7 @@
         " Если доставка не подтверждена, используйте резервный канал ниже.", true);
     } finally {
       sending = false;
-      if (submit) submit.disabled = !endpoint;
+      if (submit) submit.disabled = !gatewayReady;
     }
   }
 
