@@ -19,6 +19,12 @@ jobs:
           persist-credentials: false
       - name: Verify public page and safe destinations
         run: python3 scripts/verify_public_site.py
+      - name: Test private gateway with synthetic files only
+        run: |
+          python3 -m venv "$RUNNER_TEMP/fotomag-gateway"
+          "$RUNNER_TEMP/fotomag-gateway/bin/pip" install -r upload_gateway/requirements-dev.txt
+          "$RUNNER_TEMP/fotomag-gateway/bin/python" -m pytest -q upload_gateway/test_api.py
+          "$RUNNER_TEMP/fotomag-gateway/bin/python" -m py_compile upload_gateway/workstation_agent.py
       - name: Test personal contact navigation in Chrome
         run: |
           python3 -m venv "$RUNNER_TEMP/fotomag-browser"
