@@ -21,7 +21,8 @@ def new_order(files=None):
     if files is None:
         files = [{"name": "photo.jpg", "size": len(JPEG)}]
     payload = {
-        "kind": "photos", "phone": "+7 (900) 123-45-67", "comment": "10x15 x2",
+        "kind": "photos", "phone": "+7 (900) 123-45-67",
+        "client_name": "Алексей", "comment": "10x15 x2",
         "consent": True, "files": files,
     }
     return client.post("/api/orders", json=payload, headers=ORIGIN)
@@ -68,6 +69,7 @@ def test_full_order_delivered_to_agent_with_checksum():
     queue = client.get("/api/agent/orders", headers=ADMIN).json()["orders"]
     order = next(o for o in queue if o["order_id"] == order_id)
     assert order["phone"] == "+7 (900) 123-45-67"
+    assert order["client_name"] == "Алексей"
     for index, sample in enumerate((JPEG, PDF)):
         file_id = order["files"][index]["file_id"]
         assert order["files"][index]["sha256"] == hashlib.sha256(sample).hexdigest()
