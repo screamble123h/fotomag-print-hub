@@ -32,3 +32,19 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/fotomag-browser"
           "$RUNNER_TEMP/fotomag-browser/bin/pip" install playwright==1.62.0
           "$RUNNER_TEMP/fotomag-browser/bin/python" scripts/test_personal_contacts.py
+
+  windows_receiver:
+    name: Test D archive receiver on Windows (synthetic files only)
+    runs-on: windows-latest
+    timeout-minutes: 9
+    steps:
+      - name: Checkout verified source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test per-date/channel/client file layout without touching D
+        shell: pwsh
+        run: |
+          py -3 -m pip install "pytest>=8,<10"
+          py -3 -m pytest -q upload_gateway/test_agent_archive.py
+          py -3 -m py_compile upload_gateway/workstation_agent.py
