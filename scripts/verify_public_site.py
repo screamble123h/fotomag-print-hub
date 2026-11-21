@@ -8,14 +8,16 @@ ROOT=Path(__file__).resolve().parents[1]
 HTML=ROOT/'index.html'
 CSS=ROOT/'assets/app-shell.css'
 JS=ROOT/'assets/app-shell.js'
+UPLOAD_JS=ROOT/'assets/direct-upload.js'
 errors=[]
-for f in (HTML,CSS,JS,ROOT/'assets/fotomag_logo_official.svg',ROOT/'assets/FotoMag_FACADE_APPROVED_web.webp',ROOT/'site.webmanifest'):
+for f in (HTML,CSS,JS,UPLOAD_JS,ROOT/'assets/fotomag_logo_official.svg',ROOT/'assets/FotoMag_FACADE_APPROVED_web.webp',ROOT/'site.webmanifest'):
     if not f.exists():errors.append('Required asset missing: '+str(f.relative_to(ROOT)))
 if errors:
     print('\n'.join(errors));sys.exit(1)
 html=HTML.read_text(encoding='utf-8')
 css=CSS.read_text(encoding='utf-8')
 js=JS.read_text(encoding='utf-8')
+upload_js=UPLOAD_JS.read_text(encoding='utf-8')
 allowed_hosts={'vk.com','t.me','max.ru','yandex.com','kantstovary-dlja-shkoly-i.clients.site'}
 store_2gis='https://2gis.ru/izhevsk/firm/70000001061965152'
 required_links={
@@ -45,8 +47,10 @@ class Auditor(HTMLParser):
             if name.lower()=='style':errors.append('Inline style detected')
         if tag=='script':
             self.scripts.append(a)
-            if not (a.get('src')=='assets/app-shell.js' or (a.get('type')=='application/ld+json' and not a.get('src'))):errors.append('Unexpected script tag')
-        if tag in ('form','iframe','object','embed','base'):
+            if not (a.get('src') in ('assets/app-shell.js','assets/direct-upload.js') or (a.get('type')=='application/ld+json' and not a.get('src'))):errors.append('Unexpected script tag')
+        if tag=='form' and (a.get('id')!='direct-upload-form' or 'action' in a):
+            errors.append('Unknown HTML form / unexpected form action')
+        if tag in ('iframe','object','embed','base'):
             errors.append('Forbidden HTML element '+tag)
         if tag=='style':errors.append('Inline style not permitted')
         if tag=='template':self.templates.append(a.get('id'))
@@ -75,7 +79,7 @@ if a.main!=1 or a.h1!=1:errors.append('Main/heading hierarchy mismatch')
 if html.count('data-action="photos"')<1 or html.count('data-action="id450"')<1:errors.append('First-screen services missing')
 if len([x for x in a.buttons if 'app-tile' in x.get('class','').split()])!=6:errors.append('Expected exactly 6 smartphone tiles')
 if len([x for x in a.buttons if 'dock-btn' in x.get('class','').split()])!=4:errors.append('Expected exactly 4 dock navigation buttons')
-for name in ('photos','id450','documents','studio','shop','personal','bots','location','prices','help'):
+for name in ('photos','id450','documents','upload','studio','shop','personal','bots','location','prices','help'):
     if 'screen-'+name not in a.templates:errors.append('Service screen missing: '+name)
 for key,url in required_links.items():
     links=[x['href'] for x in a.links if x.get('id')==key]
@@ -106,18 +110,40 @@ if 'unsafe-inline' in csp or 'unsafe-eval' in csp:errors.append('Unsafe CSP keyw
 if not any(x.get('href')=='assets/app-shell.css' and x.get('rel')=='stylesheet' for x in a.css):errors.append('Self-hosted stylesheet missing')
 if not any(x.get('href')=='site.webmanifest' for x in a.css):errors.append('PWA manifest missing')
 if not any(x.get('href')=='assets/fotomag_logo_official.svg' and x.get('rel')=='icon' for x in a.css):errors.append('Official favicon missing')
-if len(a.scripts)!=2:errors.append('Unexpected script count')
+if len(a.scripts)!=3:errors.append('Unexpected script count')
 if 'innerHTML' in js or 'eval(' in js or 'new Function(' in js or 'document.write(' in js:errors.append('Unsafe dynamic executable HTML')
+if any(x in upload_js for x in ('innerHTML','eval(','new Function(','document.write(','localStorage','sessionStorage','document.cookie')):errors.append('Forbidden browser capability in upload script')
 if any(x in js for x in ('XMLHttpRequest','localStorage','sessionStorage','fetch(')):errors.append('Unexpected data transfer/storage capability')
 if '.app-tile.pressed' not in css or '.dock-btn.pressed' not in css or '.quick-bot.pressed' not in css:errors.append('Smartphone press animation missing')
 if 'history.pushState' not in js or "'#direct':'personal'" not in js:errors.append('Old deep-link compatibility missing')
 if '&amp;amp;' in html:errors.append('Double encoded email link')
+if html.count('id="direct-upload-form"')!=1 or html.count('id="direct-upload-primary"')!=1:
+    errors.append('Direct file submission form/button missing or duplicated')
+if 'window.FotoMagDirectUpload' not in upload_js or 'XMLHttpRequest' not in upload_js:
+    errors.append('Direct upload handler / progress missing')
+if '"#send-files"' not in js and "'#send-files'" not in js:
+    errors.append('Direct file page route missing')
+api_meta=re.search(r'<meta content="([^"]*)" name="fotomag-upload-api"\s*/>',html)
+if not api_meta:
+    errors.append('Explicit API endpoint configuration missing')
+elif api_meta.group(1):
+    configured=urlsplit(api_meta.group(1))
+    if configured.scheme!='https' or not configured.netloc or configured.username or configured.password:
+        errors.append('API endpoint must use HTTPS')
+    if 'connect-src '+configured.scheme+'://'+configured.netloc not in csp:
+        errors.append('CSP must pin the approved API origin')
+    if 'Перед запуском услуги' in html or not (ROOT/'privacy.html').is_file():
+        errors.append('Legal operator/privacy information required before live API activation')
+else:
+    if "connect-src 'none'" not in csp or 'id="upload-submit" type="submit"' in html:
+        errors.append('API is not configured; browser upload must remain blocked')
+
 manifest=json.loads((ROOT/'site.webmanifest').read_text(encoding='utf-8'))
 if manifest.get('start_url')!='./' or manifest.get('scope')!='./':errors.append('Manifest scope unexpected')
-for f in [HTML,CSS,JS]:
+for f in [HTML,CSS,JS,UPLOAD_JS]:
     t=f.read_text(encoding='utf-8')
     if re.search(r'ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{80,}|AKIA[0-9A-Z]{16}|-----BEGIN (?:RSA )?PRIVATE KEY-----',t):errors.append('Possible secret in '+f.name)
 if errors:
     print('BLOCKED FotoMag Smartphone release:\n'+'\n'.join(' - '+e for e in errors))
     sys.exit(1)
-print('PASS FotoMag Smartphone: service tiles, routes, approved links, accessible contacts, CSP, no client uploads, SEO and assets.')
+print('PASS FotoMag Smartphone: service tiles, routes, safe upload feature flag, approved bots, CSP and assets.')
