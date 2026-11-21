@@ -1,0 +1,25 @@
+{$FOTOMAG_API_DOMAIN} {
+    # No access logs containing URLs, uploaded names, tokens or other PII.
+    encode zstd gzip
+    header {
+        -Server
+        Cache-Control "no-store"
+        X-Content-Type-Options "nosniff"
+        Strict-Transport-Security "max-age=31536000"
+        X-Robots-Tag "noindex, nofollow"
+    }
+    request_body {
+        max_size 26MB
+    }
+    @api path /api/*
+    handle @api {
+        reverse_proxy gateway:8000 {
+            # Caddy overwrites client-supplied headers with the true socket peer.
+            # Do not place a foreign CDN in front of this origin without reviewing IP handling.
+            header_up X-FotoMag-Client-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto https
+        }
+    }
+    respond "Not found" 404
+}

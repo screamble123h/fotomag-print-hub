@@ -19,8 +19,56 @@ jobs:
           persist-credentials: false
       - name: Verify public page and safe destinations
         run: python3 scripts/verify_public_site.py
+      - name: Enforce small initial page budget
+        run: python3 scripts/verify_performance_budget.py
+      - name: Test private gateway with synthetic files only
+        run: |
+          python3 -m venv "$RUNNER_TEMP/fotomag-gateway"
+          "$RUNNER_TEMP/fotomag-gateway/bin/pip" install -r upload_gateway/requirements-dev.txt
+          "$RUNNER_TEMP/fotomag-gateway/bin/python" -m pytest -q upload_gateway/test_api.py upload_gateway/test_agent_archive.py upload_gateway/test_antivirus.py upload_gateway/test_agent_launcher.py upload_gateway/test_bootstrap_server.py
+          "$RUNNER_TEMP/fotomag-gateway/bin/python" -m py_compile upload_gateway/workstation_agent.py upload_gateway/agent_launcher.py upload_gateway/bootstrap_server.py upload_gateway/selfhost_receiver_win.py
       - name: Test personal contact navigation in Chrome
         run: |
           python3 -m venv "$RUNNER_TEMP/fotomag-browser"
           "$RUNNER_TEMP/fotomag-browser/bin/pip" install playwright==1.62.0
           "$RUNNER_TEMP/fotomag-browser/bin/python" scripts/test_personal_contacts.py
+
+  windows_receiver:
+    name: Test D archive receiver on Windows (synthetic files only)
+    runs-on: windows-latest
+    timeout-minutes: 9
+    steps:
+      - name: Checkout verified source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test per-date/channel/client file layout without touching D
+        shell: pwsh
+        run: |
+          py -3 -m pip install "pytest>=8,<10"
+          py -3 -m pytest -q upload_gateway/test_agent_archive.py
+          py -3 -m py_compile upload_gateway/workstation_agent.py
+
+  gateway_deployment:
+    name: Validate gateway Compose and Caddy without opening ports
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout verified source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Validate Docker Compose with fake disabled-only configuration
+        run: |
+          cp upload_gateway/.env.example upload_gateway/.env
+          docker compose -f upload_gateway/compose.yaml config --quiet
+          if docker compose -f upload_gateway/compose.yaml config --format json | python3 -c "import json,sys;d=json.load(sys.stdin);assert 'ports' not in d['services']['gateway'];assert 'ports' not in d['services']['clamav'];assert len(d['services']['caddy']['ports'])==2;assert d['services']['gateway']['environment']['FOTOMAG_UPLOAD_MODE']=='disabled'"; then
+            echo "PASS: Gateway and ClamAV ports are private; intake defaults off"
+          else
+            exit 1
+          fi
+      - name: Validate public HTTPS Caddyfile syntax (no service launch)
+        run: |
+          docker run --rm -e FOTOMAG_API_DOMAIN=files.example.ru \
+            -v "$PWD/upload_gateway/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
