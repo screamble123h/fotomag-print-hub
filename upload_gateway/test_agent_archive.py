@@ -1,4 +1,4 @@
-"""Offline tests for D:\2026\<date>\Напрямую\<client> delivery.
+r"""Offline tests for D:\2026\<date>\Напрямую\<client> delivery.
 
 Only a temporary sandbox directory is used. No live server, Windows PC or customer
 data is accessed. The real agent will refuse to start on non-Windows platforms.
@@ -82,6 +82,7 @@ def test_files_and_metadata_saved_once_under_direct_channel(monkeypatch, tmp_pat
         calls.append((path, method))
         return {"ok": True}
 
+    monkeypatch.setattr(agent, "API_URL", "https://api.example.test")
     monkeypatch.setattr(agent.urllib.request, "urlopen", fake_urlopen)
     monkeypatch.setattr(agent, "api_request", fake_request)
     order = sample_order()
@@ -125,6 +126,7 @@ def test_collision_fails_without_overwrite_or_ack(monkeypatch, tmp_path):
 def test_interrupted_or_corrupted_file_rejected(monkeypatch, tmp_path):
     root = tmp_path / "2026"
     root.mkdir()
+    monkeypatch.setattr(agent, "API_URL", "https://api.example.test")
     monkeypatch.setattr(agent.urllib.request, "urlopen",
                         lambda *a, **kw: io.BytesIO(FILE_DATA[:-3]))
     order = sample_order()
