@@ -237,3 +237,32 @@ def test_kill_switch_blocks_preexisting_file_tokens(monkeypatch):
     submitted = client.post(f"/api/orders/{created['order_id']}/submit",
                             headers=headers)
     assert submitted.status_code == 503
+
+
+
+def test_private_overview_exposes_counts_not_people():
+    assert client.get("/api/agent/overview").status_code == 401
+    response = client.get("/api/agent/overview", headers=ADMIN)
+    assert response.status_code == 200
+    data = response.json()
+    assert set(data) == {
+        "mode", "status_counts", "pending_count", "pending_over_15m",
+        "oldest_pending_minutes", "storage_free_gib", "storage_low",
+    }
+    assert isinstance(data["pending_count"], int)
+    assert data["pending_count"] >= 0
+    assert data["pending_over_15m"] <= data["pending_count"]
+    payload = response.text.lower()
+    assert "client_name" not in payload and "phone" not in payload
+    assert "агент" not in payload and "+7 " not in payload
+
+
+def test_health_disables_upload_when_storage_low(monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "production")
+    monkeypatch.setattr(gateway_api, "scanner_ready", lambda: True)
+    monkeypatch.setattr(gateway_api.shutil, "disk_usage",
+                        lambda _: SimpleNamespace(free=1))
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.json()["accepting_uploads"] is False
