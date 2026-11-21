@@ -188,7 +188,11 @@ def sniff(path: Path, ext: str) -> bool:
 
 @app.get("/api/health")
 def health():
-    enabled = UPLOAD_MODE == "production" and scanner_ready()
+    try:
+        space_ready = shutil.disk_usage(DATA).free >= MIN_FREE_BYTES
+    except OSError:
+        space_ready = False
+    enabled = UPLOAD_MODE == "production" and space_ready and scanner_ready()
     return {"status": "ok", "service": "fotomag-direct-upload",
             "accepting_uploads": enabled}
 
@@ -376,6 +380,41 @@ def order_status(order_id: str, authorization: str | None = Header(default=None)
             "status": row["status"],
             "downloaded_to_pc": row["status"] == "received",
         }
+
+
+@app.get("/api/agent/overview")
+def agent_overview(authorization: str | None = Header(default=None)):
+    """Authenticated, redacted operations status: never return PII or tokens."""
+    require_agent(authorization)
+    now = int(time.time())
+    with db() as c:
+        totals = {row["status"]: row["count"] for row in c.execute(
+            "SELECT status,COUNT(*) AS count FROM orders GROUP BY status"
+        )}
+        backlog = c.execute(
+            "SELECT MIN(created_ts) AS oldest,COUNT(*) AS total "
+            "FROM orders WHERE status='pending'"
+        ).fetchone()
+        stalled = c.execute(
+            "SELECT COUNT(*) FROM orders WHERE status='pending' AND created_ts<?",
+            (now - 15 * 60,),
+        ).fetchone()[0]
+    try:
+        free_bytes = shutil.disk_usage(DATA).free
+    except OSError:
+        free_bytes = -1
+    return {
+        "mode": UPLOAD_MODE,
+        "status_counts": totals,
+        "pending_count": backlog["total"],
+        "pending_over_15m": stalled,
+        "oldest_pending_minutes": (
+            max(0, (now - backlog["oldest"]) // 60)
+            if backlog["oldest"] is not None else None
+        ),
+        "storage_free_gib": round(free_bytes / (1024**3), 1) if free_bytes >= 0 else None,
+        "storage_low": free_bytes < MIN_FREE_BYTES,
+    }
 
 
 @app.get("/api/agent/orders")
