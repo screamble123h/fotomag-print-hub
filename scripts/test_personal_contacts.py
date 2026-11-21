@@ -99,6 +99,24 @@ def check_upload_ui(page, url):
     expect(page.locator("#upload-submit")).to_be_disabled()
     expect(page.locator("#upload-availability")).to_contain_text("готовится к запуску")
     expect(page.locator("#upload-files")).to_have_attribute("multiple", "")
+    expect(page.locator(".upload-heading")).to_have_text("Отправить файлы на печать")
+    expect(page.locator(".upload-service-choice")).to_have_count(3)
+    expect(page.locator('[data-upload-choice="photos"]')).to_have_attribute("aria-pressed", "true")
+    page.locator('[data-upload-choice="documents"]').click()
+    expect(page.locator("#upload-kind")).to_have_value("documents")
+    expect(page.locator('[data-upload-choice="documents"]')).to_have_attribute("aria-pressed", "true")
+    expect(page.locator('[data-upload-choice="photos"]')).to_have_attribute("aria-pressed", "false")
+    page.locator('[data-upload-choice="id450"]').click()
+    expect(page.locator("#upload-kind")).to_have_value("id450")
+    # No rendered HTML from file names; no upload is attempted.
+    test_file = "client_<img onerror=alert(1)>.pdf"
+    page.locator("#upload-files").set_input_files({
+        "name": test_file, "mimeType": "application/pdf", "buffer": b"%PDF-1.4\n%%EOF\n"
+    })
+    expect(page.locator("#upload-file-list li")).to_have_count(1)
+    expect(page.locator(".upload-file-name")).to_have_text(test_file)
+    expect(page.locator("#upload-file-list img")).to_have_count(0)
+    expect(page.locator("#upload-submit")).to_be_disabled()
     page.locator("#sheet-close").click()
     for tile, kind, selector in (
         ("#quick-print-photo", "photos", ".upload-service-cta"),
@@ -134,7 +152,7 @@ def main():
             check_general_entries(page, url)
             print(f"PASS {width}px: neutral home, dock and deep links after close or Back", flush=True)
             check_upload_ui(page, url)
-            print(f"PASS {width}px: disabled direct upload, service choices and safe deep link", flush=True)
+            print(f"PASS {width}px: approved Design A chips, safe file preview, disabled upload and deep link", flush=True)
             context.close()
         browser.close()
 
