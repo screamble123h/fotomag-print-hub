@@ -116,7 +116,7 @@ class IncomingFile(BaseModel):
 
 class IncomingOrder(BaseModel):
     kind: Literal["photos", "documents", "id450"]
-    phone: str = Field(min_length=7, max_length=32)
+    phone: str = Field(default="", max_length=32)
     client_name: str = Field(default="", max_length=70)
     comment: str = Field(default="", max_length=500)
     consent: bool
@@ -191,7 +191,8 @@ def create_order(payload: IncomingOrder, request: Request):
     if not payload.consent:
         reject(422, "Требуется согласие на обработку данных")
     phone = payload.phone.strip()
-    if not re.fullmatch(r"\+?[0-9()\-\s]{7,25}", phone) or len(re.sub(r"\D", "", phone)) < 10:
+    if phone and (not re.fullmatch(r"\+?[0-9()\-\s]{7,25}", phone)
+                  or len(re.sub(r"\D", "", phone)) < 10):
         reject(422, "Введите корректный номер телефона")
     if sum(f.size for f in payload.files) > MAX_TOTAL:
         reject(413, "Суммарный размер файлов превышает 100 МБ")
