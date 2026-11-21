@@ -36,6 +36,7 @@ def new_order(files=None):
 def test_health_and_protection():
     response = client.get("/api/health")
     assert response.status_code == 200 and response.json()["status"] == "ok"
+    assert response.json()["accepting_uploads"] is False
     assert response.headers["cache-control"] == "no-store"
     assert client.get("/api/agent/orders").status_code == 401
     assert client.post("/api/orders", json={
@@ -215,3 +216,24 @@ def test_daily_byte_budget_fails_closed(monkeypatch):
     response = new_order()
     assert response.status_code == 429
     assert "квота" in response.json()["detail"]
+
+
+def test_health_gates_customer_form_on_live_av(monkeypatch):
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "production")
+    monkeypatch.setattr(gateway_api, "scanner_ready", lambda: False)
+    assert client.get("/api/health").json()["accepting_uploads"] is False
+    monkeypatch.setattr(gateway_api, "scanner_ready", lambda: True)
+    assert client.get("/api/health").json()["accepting_uploads"] is True
+
+
+def test_kill_switch_blocks_preexisting_file_tokens(monkeypatch):
+    created = new_order().json()
+    file_id = created["files"][0]["file_id"]
+    headers = {**ORIGIN, "Authorization": "Bearer " + created["upload_token"]}
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "disabled")
+    put = client.put(f"/api/orders/{created['order_id']}/files/{file_id}",
+                     content=JPEG, headers=headers)
+    assert put.status_code == 503
+    submitted = client.post(f"/api/orders/{created['order_id']}/submit",
+                            headers=headers)
+    assert submitted.status_code == 503
