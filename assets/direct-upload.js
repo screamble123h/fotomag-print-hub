@@ -33,7 +33,7 @@
     if (!button || !note) return;
     button.disabled = !endpoint;
     note.textContent = endpoint
-      ? "Файлы поступят в защищённую очередь FotoMag. Заказ подтверждается сотрудником после проверки."
+      ? "Канал «Напрямую»: файлы будут доставлены на компьютер FotoMag, разложены по датам и отдельным папкам клиентов. Печать после проверки сотрудником."
       : "Прямая отправка готовится к запуску. Сейчас воспользуйтесь VK, MAX или Telegram ниже.";
     updateFiles();
   }
@@ -112,6 +112,7 @@
     if (!form.reportValidity()) return;
     const kind = get("upload-kind")?.value || "documents";
     const phone = get("upload-phone")?.value.trim() || "";
+    const client_name = get("upload-name")?.value.trim() || "";
     const comment = get("upload-comment")?.value.trim() || "";
     const consent = Boolean(get("upload-consent")?.checked);
     if (!consent) return status("Подтвердите согласие на обработку данных.", true);
@@ -124,7 +125,7 @@
     try {
       status("Оформляем заявку и готовим защищённую загрузку…");
       created = await post("/api/orders", {
-        kind, phone, comment, consent,
+        kind, phone, client_name, comment, consent,
         files: files.map(f => ({name: f.name, size: f.size}))
       });
       if (!created.order_id || !created.upload_token || created.files?.length !== files.length)
