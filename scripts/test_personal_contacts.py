@@ -91,6 +91,31 @@ def check_general_entries(page, url):
         expect(page.locator("#sheet")).not_to_be_visible()
 
 
+
+def check_upload_ui(page, url):
+    """No phantom success or client uploads before a private backend exists."""
+    page.locator("#direct-upload-primary").click()
+    expect(page.locator("#sheet-title")).to_have_text("Отправить файлы")
+    expect(page.locator("#upload-submit")).to_be_disabled()
+    expect(page.locator("#upload-availability")).to_contain_text("готовится к запуску")
+    expect(page.locator("#upload-files")).to_have_attribute("multiple", "")
+    page.locator("#sheet-close").click()
+    for tile, kind, selector in (
+        ("#quick-print-photo", "photos", ".upload-service-cta"),
+        ("#quick-documents", "documents", ".upload-service-cta"),
+        ("#quick-id-photo", "id450", "#id450-upload"),
+    ):
+        page.locator(tile).click()
+        page.locator(selector).click()
+        expect(page.locator("#upload-kind")).to_have_value(kind)
+        if kind == "id450":
+            expect(page.locator("#upload-comment")).to_contain_text("35×45 мм")
+        page.locator("#sheet-close").click()
+    page.goto(url + "#send-files")
+    expect(page.locator("#upload-submit")).to_be_disabled()
+    page.locator("#sheet-close").click()
+    expect(page.locator("#sheet")).not_to_be_visible()
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", nargs="?", help="Published site root (defaults to a local server)")
@@ -106,6 +131,8 @@ def main():
             print(f"PASS {width}px: three service formats, clipboard, hint and email", flush=True)
             check_general_entries(page, url)
             print(f"PASS {width}px: neutral home, dock and deep links after close or Back", flush=True)
+            check_upload_ui(page, url)
+            print(f"PASS {width}px: disabled direct upload, service choices and safe deep link", flush=True)
             context.close()
         browser.close()
 
