@@ -1,0 +1,31 @@
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: upload_gateway/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - upload_data:/data
+    networks: [internal]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    security_opt: ["no-new-privileges:true"]
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+    depends_on: [gateway]
+volumes:
+  upload_data:
+  caddy_data:
+  caddy_config:
+networks:
+  internal:
