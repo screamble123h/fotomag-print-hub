@@ -27,7 +27,10 @@ def new_order(files=None):
         "client_name": "Алексей", "comment": "10x15 x2",
         "consent": True, "files": files,
     }
-    return client.post("/api/orders", json=payload, headers=ORIGIN)
+    headers = dict(ORIGIN)
+    if gateway_api.UPLOAD_MODE == "production":
+        headers["X-FotoMag-Client-IP"] = "198.51.100.91"
+    return client.post("/api/orders", json=payload, headers=headers)
 
 
 def test_health_and_protection():
@@ -187,3 +190,28 @@ def test_production_antivirus_unavailable_keeps_order_hidden(monkeypatch):
     status = client.get(f"/api/orders/{created['order_id']}/status",
                         headers=headers).json()
     assert status["status"] == "uploading"
+
+
+def test_production_requires_trusted_proxy_header(monkeypatch):
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "production")
+    monkeypatch.setenv("FOTOMAG_CLAMD_HOST", "internal-av.test")
+    response = client.post("/api/orders", json={
+        "kind": "photos", "consent": True,
+        "files": [{"name": "scan.jpg", "size": len(JPEG)}],
+    }, headers=ORIGIN)
+    assert response.status_code == 503
+    assert "прокси" in response.json()["detail"]
+
+
+def test_low_disk_space_is_rejected_before_order_creation(monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr(gateway_api.shutil, "disk_usage",
+                        lambda path: SimpleNamespace(free=100))
+    assert new_order().status_code == 507
+
+
+def test_daily_byte_budget_fails_closed(monkeypatch):
+    monkeypatch.setattr(gateway_api, "DAILY_BYTE_BUDGET", 1)
+    response = new_order()
+    assert response.status_code == 429
+    assert "квота" in response.json()["detail"]
