@@ -106,6 +106,8 @@ def check_upload_ui(page, url):
         ("#quick-id-photo", "id450", "#id450-upload"),
     ):
         page.locator(tile).click()
+        if kind == "id450":
+            select_format(page, "35x45")
         page.locator(selector).click()
         expect(page.locator("#upload-kind")).to_have_value(kind)
         if kind == "id450":
