@@ -103,6 +103,31 @@ def test_reject_different_magic_and_incomplete_bytes():
     assert client.put(url, content=JPEG, headers=headers).status_code == 200
 
 
+def test_walk_in_without_phone_or_name_can_submit():
+    """Counter customers may upload with a receipt only, without extra typing."""
+    response = client.post("/api/orders", json={
+        "kind": "documents", "consent": True, "files": [
+            {"name": "scan.pdf", "size": len(PDF)}
+        ],
+    }, headers=ORIGIN)
+    assert response.status_code == 201, response.text
+    data = response.json()
+    queue_id, token = data["order_id"], data["upload_token"]
+    upload = client.put(
+        f"/api/orders/{queue_id}/files/{data['files'][0]['file_id']}",
+        content=PDF, headers={**ORIGIN, "Authorization": "Bearer " + token},
+    )
+    assert upload.status_code == 200
+    sent = client.post(
+        f"/api/orders/{queue_id}/submit",
+        headers={"Authorization": "Bearer " + token}
+    )
+    assert sent.status_code == 200
+    queued = client.get("/api/agent/orders", headers=ADMIN).json()["orders"]
+    item = next(o for o in queued if o["order_id"] == queue_id)
+    assert item["client_name"] == "" and item["phone"] == ""
+
+
 def test_upload_rejects_invalid_ownership_and_cross_origin():
     created = new_order().json()
     fid = created["files"][0]["file_id"]
