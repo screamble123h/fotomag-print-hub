@@ -103,6 +103,30 @@
     });
   }
 
+  async function waitForWorkstation(orderId, token, receipt) {
+    // Background checks occur ONLY after a client deliberately submits files.
+    // No storage or tracking cookies; the one-order token stays in this tab.
+    for (let attempt = 0; attempt < 8; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      if (!get("upload-status")) return;
+      try {
+        const response = await fetch(endpoint + "/api/orders/" + orderId + "/status", {
+          method: "GET", mode: "cors", credentials: "omit", cache: "no-store",
+          headers: {Authorization: "Bearer " + token},
+          signal: AbortSignal.timeout(8000)
+        });
+        if (!response.ok) continue;
+        const result = await response.json();
+        if (result.receipt !== receipt) return;
+        if (result.downloaded_to_pc) {
+          status("✓ Заявка " + receipt + " доставлена на компьютер FotoMag в канал «Напрямую». Сотрудник проверит файлы перед печатью.");
+          return;
+        }
+      } catch (_) { /* The queued order is retained while connectivity is unavailable. */ }
+    }
+    status("✓ Заявка " + receipt + " принята сервером. Ожидает загрузки на компьютер FotoMag — сотрудник свяжется с вами.");
+  }
+
   async function send(form) {
     if (sending) return;
     if (!endpoint) return status("Прямая отправка ещё не включена.", true);
@@ -144,8 +168,8 @@
       if (!answer.received || answer.receipt !== created.receipt)
         throw new Error("Не удалось подтвердить доставку файлов.");
       if (progress) progress.value = 100;
-      status("✓ Файлы загружены. Номер заявки: " + answer.receipt +
-             ". Это не подтверждение печати — сотрудник FotoMag проверит заказ и свяжется с вами.");
+      status("✓ Заявка " + answer.receipt + " принята сервером. Передача на компьютер FotoMag ожидается; это ещё не подтверждение печати.");
+      void waitForWorkstation(created.order_id, created.upload_token, answer.receipt);
       form.reset();
       updateFiles();
       if (submit) submit.textContent = "Отправить ещё файлы";
