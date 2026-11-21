@@ -129,15 +129,24 @@ if not api_meta:
     errors.append('Explicit API endpoint configuration missing')
 elif api_meta.group(1):
     configured=urlsplit(api_meta.group(1))
-    if configured.scheme!='https' or not configured.netloc or configured.username or configured.password:
+    if (configured.scheme!='https' or not configured.netloc or configured.username
+            or configured.password or configured.path not in ('','/')
+            or configured.query or configured.fragment):
         errors.append('API endpoint must use HTTPS')
     api_origin=configured.scheme+'://'+configured.netloc
     directive=re.search(r'(?:^|;\s*)connect-src\s+([^;]+)',csp)
     sources=directive.group(1).split() if directive else []
     if set(sources) not in ({api_origin},{api_origin,"'self'"}):
         errors.append('CSP must allow ONLY the approved HTTPS API origin, optionally self')
-    if 'Перед запуском услуги' in html or not (ROOT/'privacy.html').is_file():
+    privacy=ROOT/'privacy.html'
+    if any(x in html for x in ('Перед запуском услуги','До запуска публикуются')) or not privacy.is_file():
         errors.append('Legal operator/privacy information required before live API activation')
+    if 'href="privacy.html"' not in html:
+        errors.append('Client consent must link to the published privacy page')
+    if privacy.is_file():
+        policy=privacy.read_text(encoding='utf-8')
+        if any(mark in policy for mark in ('[заполнить','[указать','[ФИО','PLACEHOLDER','TODO_PRIVACY')):
+            errors.append('Privacy page still contains placeholders')
 else:
     if "connect-src 'none'" not in csp or not re.search(r'<button[^>]*\bdisabled\b[^>]*id="upload-submit"[^>]*>', html):
         errors.append('API is not configured; browser upload must remain blocked')
