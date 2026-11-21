@@ -29,3 +29,10 @@ build_secure_*.py
 security_stage_*.json
 AUDIT_*.md
 MOBILE_LAUNCH_REPORT_*.md
+
+# Local-only direct-upload staging (never upload real documents or authentication)
+**/.venv/
+**/local_staging_config.json
+**/QA_GATEWAY_DATA/
+**/QA_E2E_*/
+**/QA_ONLY_*/
