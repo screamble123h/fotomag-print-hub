@@ -23,6 +23,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from upload_gateway.antivirus import scan_file, ScannerUnavailable, ThreatDetected
 
 DATA = Path(os.environ.get("FOTOMAG_DATA_DIR", "/data")).resolve()
 AGENT_TOKEN = os.environ.get("FOTOMAG_AGENT_TOKEN", "")
@@ -39,6 +40,9 @@ MAX_FILE = 25 * 1024 * 1024
 MAX_TOTAL = 100 * 1024 * 1024
 MAX_FILES = 10
 MAX_HOURLY = 6
+UPLOAD_MODE = os.environ.get('FOTOMAG_UPLOAD_MODE', 'disabled')
+if UPLOAD_MODE not in ('disabled', 'staging', 'production'):
+    raise RuntimeError('Invalid upload mode')
 SHOP_TZ = timezone(timedelta(hours=4))  # Izhevsk/Samara standard UTC+4.
 EXTS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".pdf", ".docx", ".xlsx"}
 
@@ -185,6 +189,12 @@ def health():
 
 @app.post("/api/orders", status_code=201)
 def create_order(payload: IncomingOrder, request: Request):
+    if UPLOAD_MODE == 'disabled':
+        reject(503, 'Приём файлов пока не включён')
+    if UPLOAD_MODE == 'staging' and (not request.client or request.client.host not in ('127.0.0.1', '::1', 'testclient')):
+        reject(503, 'Тестовый приёмник не доступен из интернета')
+    if UPLOAD_MODE == 'production' and not os.environ.get('FOTOMAG_CLAMD_HOST'):
+        reject(503, 'Невозможно принимать файлы без антивируса')
     if request.headers.get("origin") != SITE_ORIGIN:
         reject(403, "Недопустимый источник запроса")
     if not payload.consent:
