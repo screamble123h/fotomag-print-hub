@@ -52,6 +52,10 @@ def test_full_order_delivered_to_agent_with_checksum():
     assert created_response.status_code == 201, created_response.text
     created = created_response.json()
     order_id, token = created["order_id"], created["upload_token"]
+    status_url = f"/api/orders/{order_id}/status"
+    assert client.get(status_url).status_code == 404
+    status = client.get(status_url, headers={"Authorization": "Bearer " + token})
+    assert status.status_code == 200 and status.json()["downloaded_to_pc"] is False
     headers = dict(ORIGIN, Authorization="Bearer " + token,
                    **{"Content-Type": "application/octet-stream"})
     assert client.post(f"/api/orders/{order_id}/submit",
@@ -66,6 +70,8 @@ def test_full_order_delivered_to_agent_with_checksum():
                             headers={"Authorization": "Bearer " + token})
     assert submitted.status_code == 200, submitted.text
     assert submitted.json()["receipt"] == created["receipt"]
+    pending = client.get(status_url, headers={"Authorization": "Bearer " + token})
+    assert pending.json()["status"] == "pending" and not pending.json()["downloaded_to_pc"]
     queue = client.get("/api/agent/orders", headers=ADMIN).json()["orders"]
     order = next(o for o in queue if o["order_id"] == order_id)
     assert order["phone"] == "+7 (900) 123-45-67"
@@ -78,6 +84,9 @@ def test_full_order_delivered_to_agent_with_checksum():
     assert client.post("/api/agent/orders/" + order_id + "/ack").status_code == 401
     assert client.post("/api/agent/orders/" + order_id + "/ack",
                        headers=ADMIN).json() == {"ok": True}
+    delivered = client.get(status_url, headers={"Authorization": "Bearer " + token})
+    assert delivered.json()["status"] == "received"
+    assert delivered.json()["downloaded_to_pc"] is True
     queue_after = client.get("/api/agent/orders", headers=ADMIN).json()["orders"]
     assert not any(o["order_id"] == order_id for o in queue_after)
 
