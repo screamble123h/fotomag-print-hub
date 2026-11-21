@@ -230,7 +230,7 @@ def receive_order(order: dict, root: Path = ARCHIVE_ROOT,
     create_exclusive(folder / "ЗАКАЗ.txt", text)
     # Acknowledge only AFTER all files and both metadata records are stored.
     api_request("/api/agent/orders/" + order["order_id"] + "/ack", method="POST")
-    LOG.info("Order %s saved to %s (%d file(s))", receipt, folder, len(files))
+    LOG.info("Order %s acknowledged (%d files)", receipt, len(files))
     return folder
 
 
@@ -254,11 +254,13 @@ def main() -> int:
                 try:
                     receive_order(order, root, DATE_SUBPATH)
                 except Exception:
-                    LOG.exception("Failed to receive order %s; will retry", order.get("receipt", "?"))
+                    LOG.error("Failed to receive order %s: %s; retrying",
+                              order.get("receipt", "?"), type(sys.exc_info()[1]).__name__)
             failure_count = 0
         except (urllib.error.URLError, OSError, ValueError, KeyError, TimeoutError):
             failure_count = min(5, failure_count + 1)
-            LOG.exception("Queue unavailable; retrying")
+            LOG.error("Queue temporarily unavailable (%s); retrying",
+                      type(sys.exc_info()[1]).__name__)
         time.sleep(INTERVAL * (2 ** min(failure_count, 3)))
 
 
