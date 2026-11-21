@@ -44,31 +44,41 @@
 </aside></div>
 <dialog aria-labelledby="sheet-title" class="sheet" id="sheet"><div class="sheet-head"><span class="sheet-topicon" id="sheet-icon"></span><div class="sheet-head-title"><p class="sheet-kicker" id="sheet-kicker"></p><h2 class="sheet-title" id="sheet-title"></h2></div><button aria-label="Закрыть" class="sheet-close" id="sheet-close" type="button">×</button></div><div class="sheet-body" id="sheet-body"></div></dialog>
 <template id="screen-upload">
-<p class="sheet-copy">Выберите фото или документ прямо на телефоне. Файлы передаются в рабочую очередь FotoMag без перехода в VK, MAX и Telegram.</p>
+<div class="upload-intro">
+<p class="upload-kicker">Отправка без мессенджеров</p>
+<h3 class="upload-heading">Отправить файлы на печать</h3>
+<p class="sheet-copy">Сразу в FotoMag. Без Telegram, MAX и VK. Каждая заявка сохраняется отдельно по клиентам.</p>
+</div>
 <form class="direct-upload-form" id="direct-upload-form">
-<label for="upload-kind">Что нужно сделать?</label>
-<select id="upload-kind" name="kind" required>
-<option value="documents">Распечатать документы / PDF</option>
-<option value="photos">Напечатать фотографии</option>
-<option value="id450">Фото на документы с готового снимка · 450 ₽</option>
-</select>
-<label for="upload-files">Выберите фотографии или документы</label>
-<input accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.pdf,.docx,.xlsx" id="upload-files" multiple name="files" required type="file"/>
-<p class="upload-small" id="upload-files-summary">Можно выбрать до 10 файлов: JPG, PNG, WEBP, HEIC, PDF, DOCX, XLSX.</p>
-<label for="upload-phone">Телефон для связи (необязательно)</label>
-<input autocomplete="tel" id="upload-phone" inputmode="tel" maxlength="25" name="phone" placeholder="+7 900 123-45-67" type="tel"/>
-<label for="upload-name">Как к вам обращаться? (необязательно)</label>
+<fieldset class="upload-kind-field">
+<legend class="upload-legend">Что нужно напечатать?</legend>
+<div class="upload-service-options">
+<button aria-pressed="true" class="upload-service-choice is-selected" data-upload-choice="photos" type="button">📷 Фото</button>
+<button aria-pressed="false" class="upload-service-choice" data-upload-choice="documents" type="button">📄 Документы</button>
+<button aria-pressed="false" class="upload-service-choice" data-upload-choice="id450" type="button">🪪 На документы</button>
+</div>
+</fieldset>
+<input id="upload-kind" name="kind" type="hidden" value="photos"/>
+<input accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.pdf,.docx,.xlsx" class="upload-file-input" id="upload-files" multiple name="files" required type="file"/>
+<label class="upload-picker" for="upload-files"><span aria-hidden="true" class="upload-picker-symbol">↑</span><strong>Выбрать файлы</strong><small>Из галереи или телефона · до 10 файлов без сжатия</small></label>
+<p class="upload-small" id="upload-files-summary">JPG, PNG, WEBP, HEIC, PDF, DOCX, XLSX · до 25 МБ каждый.</p>
+<ul aria-live="polite" class="upload-file-list" id="upload-file-list"></ul>
+<label for="upload-name">Имя (по желанию)</label>
 <input autocomplete="name" id="upload-name" maxlength="70" name="client_name" placeholder="Например, Алексей" type="text"/>
-<label for="upload-comment">Пожелания к печати (необязательно)</label>
-<textarea id="upload-comment" maxlength="500" name="comment" placeholder="Размер, количество, цветность, страницы, формат фото…" rows="3"></textarea>
-<label class="upload-consent" for="upload-consent"><input id="upload-consent" name="consent" required type="checkbox"/><span>Я согласен на обработку номера телефона и переданных файлов для выполнения заказа. Перед запуском услуги публикуются сведения об операторе и политика обработки данных.</span></label>
+<label for="upload-comment">Пожелания к печати (по желанию)</label>
+<textarea id="upload-comment" maxlength="500" name="comment" placeholder="Размер, количество, цветность…" rows="2"></textarea>
+<details class="upload-contact-extra"><summary>Добавить телефон для связи (по желанию)</summary>
+<label for="upload-phone">Телефон</label>
+<input autocomplete="tel" id="upload-phone" inputmode="tel" maxlength="25" name="phone" placeholder="+7 900 123-45-67" type="tel"/>
+</details>
+<label class="upload-consent" for="upload-consent"><input id="upload-consent" name="consent" required type="checkbox"/><span>Я согласен на обработку переданных файлов и указанных данных для выполнения заказа. До запуска публикуются сведения об операторе и политика обработки данных.</span></label>
 <p class="upload-small" id="upload-availability"></p>
 <progress aria-label="Загрузка файлов" hidden id="upload-progress" max="100" value="0"></progress>
-<button class="sheet-main-cta" disabled id="upload-submit" type="submit">↑ Отправить файлы</button>
+<button class="sheet-main-cta" disabled id="upload-submit" type="submit">Отправить в FotoMag →</button>
 <p aria-live="polite" class="upload-status" id="upload-status" role="status"></p>
 </form>
-<p class="sheet-note">Пока приёмник не подключён, отправка отключена. Это не подтверждение заказа и не онлайн-оплата.</p>
-<button class="upload-bot-fallback" data-action="bots" data-sheet-nav="true" type="button">Отправить через VK, MAX или Telegram →</button>
+<p class="sheet-note">Номер заявки появится после приёма сервером, а сообщение «Файлы на компьютере» — только после подтверждения доставки. Печать и стоимость подтверждает сотрудник.</p>
+<button class="upload-bot-fallback" data-action="bots" data-sheet-nav="true" type="button">Нужен другой способ? VK · MAX · Telegram →</button>
 </template><template id="screen-photos"><p class="sheet-copy">Фотографии с телефона на настоящей бумаге. Цена формата 10×15: <b>струйная 35 ₽</b>, сублимационная <b>55 ₽</b> за штуку.</p><span class="sheet-price">от 35 ₽ · 10×15</span><button class="upload-service-cta" data-action="upload" data-upload-kind="photos" data-sheet-nav="true" type="button">↑ Выбрать и отправить фотографии здесь</button><div class="sheet-steps"><p><b>1.</b> Откройте удобного бота.</p><p><b>2.</b> Прикрепите фотографии.</p><p><b>3.</b> Выберите размер, бумагу и количество, подтвердите заказ.</p></div><h3 class="choice-title">Заказать через бота</h3><div class="choice-list"><a class="choice-btn primary" href="https://vk.com/write-20848548" id="bot-vk" rel="noopener noreferrer" target="_blank"><span><span aria-hidden="true" class="choice-emoji">VK</span><span class="choice-label"><b>ВКонтакте</b><small>Бот FotoMag</small></span></span><span aria-hidden="true" class="choice-arrow">↗</span></a><a class="choice-btn" href="https://max.ru/id180904019369_bot" id="bot-max" rel="noopener noreferrer" target="_blank"><span><span aria-hidden="true" class="choice-emoji">M</span><span class="choice-label"><b>MAX</b><small>Бот FotoMag</small></span></span><span aria-hidden="true" class="choice-arrow">↗</span></a><a class="choice-btn" href="https://t.me/fotomag_orders_bot" id="bot-tg" rel="noopener noreferrer" target="_blank"><span><span aria-hidden="true" class="choice-emoji">➤</span><span class="choice-label"><b>Telegram</b><small>@fotomag_orders_bot</small></span></span><span aria-hidden="true" class="choice-arrow">↗</span></a></div><p class="sheet-note">Сайт не принимает файлы напрямую. Бот может запросить дополнительные параметры.</p></template><template id="screen-id450">
 <div class="hash-anchor" id="order450"></div>
 <section aria-label="Обработка фотографий на документы 450 рублей" class="id-promo">
