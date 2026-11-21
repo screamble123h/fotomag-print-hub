@@ -47,3 +47,20 @@ def scan_file(path: Path) -> None:
             raise ScannerUnavailable("ClamAV did not return an OK verdict")
     except (OSError, TimeoutError, ValueError) as e:
         raise ScannerUnavailable("ClamAV service is unavailable") from e
+
+
+
+def scanner_ready(timeout: float = 1.5) -> bool:
+    """Small live probe used only when a customer opens the upload screen."""
+    host = os.environ.get("FOTOMAG_CLAMD_HOST", "")
+    if not host:
+        return False
+    try:
+        port = int(os.environ.get("FOTOMAG_CLAMD_PORT", "3310"))
+        with socket.create_connection((host, port), timeout=timeout) as conn:
+            conn.settimeout(timeout)
+            conn.sendall(b"zPING\x00")
+            response = conn.recv(16)
+        return response.rstrip(b"\x00\r\n ") == b"PONG"
+    except (OSError, TimeoutError, ValueError):
+        return False
