@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import ipaddress
 from contextlib import contextmanager
 import os
 import re
 import secrets
+import shutil
 import sqlite3
 import time
 import uuid
@@ -39,7 +41,9 @@ DB = DATA / "queue.sqlite3"
 MAX_FILE = 25 * 1024 * 1024
 MAX_TOTAL = 100 * 1024 * 1024
 MAX_FILES = 10
-MAX_HOURLY = 6
+MAX_HOURLY = 60  # Counter customers can share one Wi-Fi/NAT IP.
+DAILY_BYTE_BUDGET = int(os.environ.get('FOTOMAG_DAILY_BYTE_BUDGET', str(5 * 1024 ** 3)))
+MIN_FREE_BYTES = int(os.environ.get('FOTOMAG_MIN_FREE_BYTES', str(3 * 1024 ** 3)))
 UPLOAD_MODE = os.environ.get('FOTOMAG_UPLOAD_MODE', 'disabled')
 if UPLOAD_MODE not in ('disabled', 'staging', 'production'):
     raise RuntimeError('Invalid upload mode')
@@ -212,8 +216,19 @@ def create_order(payload: IncomingOrder, request: Request):
         if not name or ext not in EXTS:
             reject(415, "Поддерживаются JPG, PNG, WEBP, HEIC, PDF, DOCX и XLSX")
         file_specs.append((uuid.uuid4().hex, name, ext, f.size))
-    remote_ip = request.client.host if request.client else "unknown"
+    # Caddy must overwrite X-FotoMag-Client-IP from its own TCP peer, not forward client input.
+    # Gateway port 8000 must NOT be published outside the private Docker network.
+    if UPLOAD_MODE == "production":
+        raw_ip = request.headers.get("x-fotomag-client-ip", "")
+        try:
+            remote_ip = str(ipaddress.ip_address(raw_ip))
+        except ValueError:
+            reject(503, "Защищённый прокси не настроен")
+    else:
+        remote_ip = request.client.host if request.client else "testclient"
     ip_hash = hmac.new(AGENT_TOKEN.encode(), remote_ip.encode(), hashlib.sha256).hexdigest()
+    if shutil.disk_usage(DATA).free < MIN_FREE_BYTES:
+        reject(507, "Недостаточно места в хранилище, попробуйте позже")
     now = int(time.time())
     order_id = uuid.uuid4().hex
     receipt = "FM-W-" + datetime.fromtimestamp(now, SHOP_TZ).strftime("%Y%m%d") + "-" + order_id[:7].upper()
@@ -226,6 +241,14 @@ def create_order(payload: IncomingOrder, request: Request):
         ).fetchone()[0]
         if hourly >= MAX_HOURLY:
             reject(429, "Превышен лимит заявок. Позвоните в FotoMag")
+        day_bytes = c.execute(
+            "SELECT COALESCE(SUM(f.expected_size),0) FROM files AS f "
+            "JOIN orders AS o ON o.id=f.order_id "
+            "WHERE o.created_ts >= ? AND o.status != 'rejected'",
+            (now - 86400,),
+        ).fetchone()[0]
+        if day_bytes + sum(f.size for f in payload.files) > DAILY_BYTE_BUDGET:
+            reject(429, "Суточная квота приёма достигнута, позвоните в FotoMag")
         c.execute(
             "INSERT INTO orders"
             "(id,receipt,token_sha256,kind,phone,client_name,comment,ip_hash,"
