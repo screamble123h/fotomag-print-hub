@@ -135,7 +135,7 @@ elif api_meta.group(1):
     if 'Перед запуском услуги' in html or not (ROOT/'privacy.html').is_file():
         errors.append('Legal operator/privacy information required before live API activation')
 else:
-    if "connect-src 'none'" not in csp or 'id="upload-submit" type="submit"' in html:
+    if "connect-src 'none'" not in csp or not re.search(r'<button[^>]*\bdisabled\b[^>]*id="upload-submit"[^>]*>', html):
         errors.append('API is not configured; browser upload must remain blocked')
 
 manifest=json.loads((ROOT/'site.webmanifest').read_text(encoding='utf-8'))
