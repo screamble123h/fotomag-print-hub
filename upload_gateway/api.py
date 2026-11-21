@@ -14,7 +14,8 @@ import sqlite3
 import time
 import uuid
 import zipfile
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Literal
 
@@ -38,6 +39,7 @@ MAX_FILE = 25 * 1024 * 1024
 MAX_TOTAL = 100 * 1024 * 1024
 MAX_FILES = 10
 MAX_HOURLY = 6
+SHOP_TZ = ZoneInfo("Europe/Samara")  # Ижевск UTC+4; local receipt date.
 EXTS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".pdf", ".docx", ".xlsx"}
 
 app = FastAPI(title="FotoMag upload gateway", docs_url=None, redoc_url=None, openapi_url=None)
@@ -75,7 +77,7 @@ def initialize():
             CREATE TABLE IF NOT EXISTS orders (
                 id TEXT PRIMARY KEY, receipt TEXT UNIQUE NOT NULL,
                 token_sha256 TEXT NOT NULL, kind TEXT NOT NULL,
-                phone TEXT NOT NULL, comment TEXT NOT NULL,
+                phone TEXT NOT NULL, client_name TEXT NOT NULL DEFAULT '', comment TEXT NOT NULL,
                 ip_hash TEXT NOT NULL, status TEXT NOT NULL,
                 created_ts INTEGER NOT NULL, received_ts INTEGER
             );
@@ -89,6 +91,10 @@ def initialize():
             );
             CREATE INDEX IF NOT EXISTS files_order ON files(order_id);
         """)
+        # Support an existing test database without deleting any orders.
+        columns = {row[1] for row in c.execute("PRAGMA table_info(orders)")}
+        if "client_name" not in columns:
+            c.execute("ALTER TABLE orders ADD COLUMN client_name TEXT NOT NULL DEFAULT ''")
 
 
 initialize()
@@ -102,6 +108,7 @@ class IncomingFile(BaseModel):
 class IncomingOrder(BaseModel):
     kind: Literal["photos", "documents", "id450"]
     phone: str = Field(min_length=7, max_length=32)
+    client_name: str = Field(default="", max_length=70)
     comment: str = Field(default="", max_length=500)
     consent: bool
     files: list[IncomingFile] = Field(min_length=1, max_length=MAX_FILES)
@@ -190,7 +197,7 @@ def create_order(payload: IncomingOrder, request: Request):
     ip_hash = hmac.new(AGENT_TOKEN.encode(), remote_ip.encode(), hashlib.sha256).hexdigest()
     now = int(time.time())
     order_id = uuid.uuid4().hex
-    receipt = "FM-W-" + datetime.now(timezone.utc).strftime("%Y%m%d") + "-" + order_id[:7].upper()
+    receipt = "FM-W-" + datetime.fromtimestamp(now, SHOP_TZ).strftime("%Y%m%d") + "-" + order_id[:7].upper()
     token = secrets.token_urlsafe(32)
     with db() as c:
         c.execute("BEGIN IMMEDIATE")
@@ -201,9 +208,12 @@ def create_order(payload: IncomingOrder, request: Request):
         if hourly >= MAX_HOURLY:
             reject(429, "Превышен лимит заявок. Позвоните в FotoMag")
         c.execute(
-            "INSERT INTO orders VALUES(?,?,?,?,?,?,?,?,?,NULL)",
+            "INSERT INTO orders"
+            "(id,receipt,token_sha256,kind,phone,client_name,comment,ip_hash,"
+            "status,created_ts,received_ts) VALUES(?,?,?,?,?,?,?,?,?,?,NULL)",
             (order_id, receipt, hashlib.sha256(token.encode()).hexdigest(),
-             payload.kind, phone, payload.comment.strip(), ip_hash, "uploading", now),
+             payload.kind, phone, payload.client_name.strip(),
+             payload.comment.strip(), ip_hash, "uploading", now),
         )
         for fid, name, ext, size in file_specs:
             c.execute(
@@ -298,7 +308,8 @@ def agent_orders(authorization: str | None = Header(default=None)):
             ).fetchall()
             result.append({
                 "order_id": o["id"], "receipt": o["receipt"], "kind": o["kind"],
-                "phone": o["phone"], "comment": o["comment"], "created_ts": o["created_ts"],
+                "phone": o["phone"], "client_name": o["client_name"],
+                "comment": o["comment"], "created_ts": o["created_ts"],
                 "files": [{"file_id": f["id"], "name": f["original_name"],
                            "size": f["uploaded_size"], "sha256": f["sha256"]}
                           for f in files],
