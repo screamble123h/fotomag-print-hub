@@ -8,4 +8,4 @@ COPY upload_gateway/ /app/upload_gateway/
 RUN mkdir -p /data && chown -R fotomag:fotomag /data
 USER fotomag
 EXPOSE 8000
-CMD ["python", "-m", "uvicorn", "upload_gateway.api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["python", "-m", "uvicorn", "upload_gateway.api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "172.16.0.0/12,10.0.0.0/8,192.168.0.0/16"]
