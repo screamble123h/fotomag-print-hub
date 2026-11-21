@@ -25,7 +25,7 @@ API_URL = os.environ.get("FOTOMAG_API_URL", "").rstrip("/")
 TOKEN = os.environ.get("FOTOMAG_AGENT_TOKEN", "")
 ARCHIVE_ROOT = Path(os.environ.get("FOTOMAG_ARCHIVE_ROOT", r"D:\2026"))
 # Configure to match EXISTING archive, e.g. "%m.%Y/%d.%m.%Y" for month/day folders.
-DATE_SUBPATH = os.environ.get("FOTOMAG_DATE_SUBPATH", "%d.%m.%Y")
+DATE_SUBPATH = os.environ.get("FOTOMAG_DATE_SUBPATH", "%m/%d")
 INTERVAL = max(15, int(os.environ.get("FOTOMAG_POLL_SECONDS", "30")))
 CHANNEL = "Напрямую"
 IZHEVSK_TIME = timezone(timedelta(hours=4), name="Izhevsk")
@@ -84,7 +84,7 @@ def safe_filename(name: str) -> str:
 def order_destination(order: dict, root: Path, pattern: str = DATE_SUBPATH) -> Path:
     """Pure mapping; does not write anything to disk.
 
-    D:\2026\21.11.2026\Напрямую\Клиент_Алексей_FM-W-20261121-ABC1234
+    D:\2026\11\21\Напрямую\Алексей\FM-W-20261121-ABC1234
     """
     receipt = str(order.get("receipt", ""))
     match = RECEIPT_PATTERN.fullmatch(receipt)
@@ -107,8 +107,7 @@ def order_destination(order: dict, root: Path, pattern: str = DATE_SUBPATH) -> P
            for p in parts):
         raise ValueError("Unsafe archive date folder")
     client_name = safe_part(order.get("client_name") or "Без_имени", 46)
-    client_folder = f"Клиент_{client_name}_{receipt}"
-    return root.joinpath(*parts, CHANNEL, client_folder)
+    return root.joinpath(*parts, CHANNEL, client_name, receipt)
 
 
 def validate_pc_archive(root: Path) -> Path:
