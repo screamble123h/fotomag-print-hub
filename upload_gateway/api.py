@@ -15,8 +15,7 @@ import sqlite3
 import time
 import uuid
 import zipfile
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -40,7 +39,7 @@ MAX_FILE = 25 * 1024 * 1024
 MAX_TOTAL = 100 * 1024 * 1024
 MAX_FILES = 10
 MAX_HOURLY = 6
-SHOP_TZ = ZoneInfo("Europe/Samara")  # Ижевск UTC+4; local receipt date.
+SHOP_TZ = timezone(timedelta(hours=4))  # Izhevsk/Samara standard UTC+4.
 EXTS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".pdf", ".docx", ".xlsx"}
 
 app = FastAPI(title="FotoMag upload gateway", docs_url=None, redoc_url=None, openapi_url=None)
