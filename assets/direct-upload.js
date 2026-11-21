@@ -19,6 +19,7 @@
   const selectedFiles = () => [...(get("upload-files")?.files || [])];
   const humanSize = bytes => (bytes / (1024 * 1024)).toFixed(1).replace(".", ",") + " МБ";
   let sending = false;
+  let activeReceipt = "";
 
   function status(message, isError = false) {
     const line = get("upload-status");
@@ -28,6 +29,7 @@
   }
 
   function onView() {
+    activeReceipt = ""; // Do not update a newly opened screen from an old order poll.
     const button = get("upload-submit");
     const note = get("upload-availability");
     if (!button || !note) return;
@@ -108,7 +110,7 @@
     // No storage or tracking cookies; the one-order token stays in this tab.
     for (let attempt = 0; attempt < 8; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 5000));
-      if (!get("upload-status")) return;
+      if (!get("upload-status") || activeReceipt !== receipt) return;
       try {
         const response = await fetch(endpoint + "/api/orders/" + orderId + "/status", {
           method: "GET", mode: "cors", credentials: "omit", cache: "no-store",
@@ -118,13 +120,13 @@
         if (!response.ok) continue;
         const result = await response.json();
         if (result.receipt !== receipt) return;
-        if (result.downloaded_to_pc) {
+        if (result.downloaded_to_pc && activeReceipt === receipt) {
           status("✓ Заявка " + receipt + " доставлена на компьютер FotoMag в канал «Напрямую». Сотрудник проверит файлы перед печатью.");
           return;
         }
       } catch (_) { /* The queued order is retained while connectivity is unavailable. */ }
     }
-    status("✓ Заявка " + receipt + " принята сервером. Ожидает загрузки на компьютер FotoMag — сотрудник свяжется с вами.");
+    if (activeReceipt === receipt) status("✓ Заявка " + receipt + " принята сервером. Ожидает загрузки на компьютер FotoMag — сотрудник свяжется с вами.");
   }
 
   async function send(form) {
@@ -143,6 +145,7 @@
     const submit = get("upload-submit");
     const progress = get("upload-progress");
     sending = true;
+    activeReceipt = "";
     if (submit) submit.disabled = true;
     if (progress) { progress.hidden = false; progress.value = 0; }
     let created;
@@ -168,6 +171,7 @@
       if (!answer.received || answer.receipt !== created.receipt)
         throw new Error("Не удалось подтвердить доставку файлов.");
       if (progress) progress.value = 100;
+      activeReceipt = answer.receipt;
       status("✓ Заявка " + answer.receipt + " принята сервером. Передача на компьютер FotoMag ожидается; это ещё не подтверждение печати.");
       void waitForWorkstation(created.order_id, created.upload_token, answer.receipt);
       form.reset();
