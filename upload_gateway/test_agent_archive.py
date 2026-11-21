@@ -1,4 +1,4 @@
-r"""Offline tests for D:\2026\<date>\Напрямую\<client> delivery.
+r"""Offline tests for D:\2026\11\21\Напрямую\<client>\<order> delivery.
 
 Only a temporary sandbox directory is used. No live server, Windows PC or customer
 data is accessed. The real agent will refuse to start on non-Windows platforms.
@@ -40,7 +40,7 @@ def test_expected_channel_path_and_izhevsk_date(tmp_path):
     root = tmp_path / "2026"
     root.mkdir()
     path = agent.order_destination(sample_order(), root)
-    assert path == root / "21.11.2026" / "Напрямую" / f"Клиент_Алексей_{RECEIPT}"
+    assert path == root / "11" / "21" / "Напрямую" / "Алексей" / RECEIPT
     assert not path.exists()  # Path selection alone must be read-only.
 
 
@@ -49,9 +49,7 @@ def test_monthly_archive_template_and_name_sanitization(tmp_path):
     root.mkdir()
     path = agent.order_destination(sample_order("Иван / Отправитель"), root,
                                    "%m.%Y/%d.%m.%Y")
-    assert path == root / "11.2026" / "21.11.2026" / "Напрямую" / (
-        f"Клиент_Отправитель_{RECEIPT}"
-    )
+    assert path == root / "11.2026" / "21.11.2026" / "Напрямую" / "Отправитель" / RECEIPT
     # User-provided content is never allowed to control directories.
     assert agent.safe_filename(r"C:\Users\test\CON.pdf") == "_CON.pdf"
     assert agent.safe_filename("../../client.jpg") == "client.jpg"
@@ -65,7 +63,7 @@ def test_real_D_path_preview_without_writing():
     if os.name != "nt":
         pytest.skip("D: path semantics are Windows-specific")
     path = agent.order_destination(sample_order(), Path(r"D:\2026"))
-    assert str(path).startswith("D:\\2026\\21.11.2026\\Напрямую\\Клиент_")
+    assert str(path).startswith("D:\\2026\\11\\21\\Напрямую\\Алексей\\")
     # Absolutely no mkdir(), no real order download and no test data on D:.
 
 
@@ -97,9 +95,7 @@ def test_files_and_metadata_saved_once_under_direct_channel(monkeypatch, tmp_pat
     monkeypatch.setattr(agent, "api_request", fake_request)
     order = sample_order()
     folder = agent.receive_order(order, root)
-    assert folder == root / "21.11.2026" / "Напрямую" / (
-        f"Клиент_Алексей_{RECEIPT}"
-    )
+    assert folder == root / "11" / "21" / "Напрямую" / "Алексей" / RECEIPT
     assert (folder / "01_photo.jpg").read_bytes() == FILE_DATA
     metadata = json.loads((folder / "order.json").read_text(encoding="utf-8"))
     assert metadata["channel"] == "Напрямую"
