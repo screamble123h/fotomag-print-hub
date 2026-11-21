@@ -15,6 +15,7 @@
     photos: { title: 'Печать фотографий', kicker: 'Фотоуслуги', icon: 'photos', route: '#photo-print' },
     id450: { title: 'Фото на документы', kicker: 'Ваше фото на любом фоне · 450 ₽', icon: 'id450', route: '#order450' },
     documents: { title: 'Документы и PDF', kicker: 'Печать с телефона', icon: 'documents', route: '#documents' },
+    upload: { title: 'Отправить файлы', kicker: 'Без мессенджеров · прямо с телефона', icon: 'documents', route: '#send-files' },
     studio: { title: 'Фото на паспорт', kicker: 'Новая съёмка в FotoMag', icon: 'studio', route: '#id-photo' },
     shop: { title: 'Мини-магазин', kicker: 'Будущий раздел', icon: 'shop', route: '#shop' },
     personal: { title: 'Отправить лично', kicker: 'Без бота · напрямую', icon: 'personal', route: '#personal-contacts' },
@@ -25,7 +26,7 @@
   });
   const hashRoutes = Object.freeze({
     '#photo-print':'photos','#photos':'photos','#order450':'id450','#promo450':'id450',
-    '#id-photo':'studio','#documents':'documents','#docs':'documents','#shop':'shop',
+    '#id-photo':'studio','#documents':'documents','#docs':'documents','#shop':'shop','#send-files':'upload',
     '#personal-contacts':'personal','#direct':'personal','#bots':'bots','#location':'location',
     '#prices':'prices','#help':'help','#faq':'help'
   });
@@ -95,6 +96,19 @@
     sheetBody.replaceChildren(template.content.cloneNode(true));
     if(section==='id450') updateFormatUI();
     if(section==='personal') updatePersonalContext(options.orderFormat);
+    if(section==='upload'){
+      const select=sheetBody.querySelector('#upload-kind');
+      if(select && ['photos','documents','id450'].includes(options.uploadKind))
+        select.value=options.uploadKind;
+      if(options.uploadKind==='id450'){
+        const note=sheetBody.querySelector('#upload-comment');
+        if(note){
+          const chosen=formatOptions[selectedFormat];
+          note.value='Фото на документы '+chosen.label+', '+chosen.count+' шт. — 450 ₽';
+        }
+      }
+      window.FotoMagDirectUpload?.onView();
+    }
     const sourceIcon = document.querySelector(`[data-action="${config.icon}"] .tile-icon svg`) ||
       document.querySelector(`[data-action="${config.icon}"] .dock-icon svg`);
     sheetIcon.replaceChildren();
@@ -127,11 +141,11 @@
     closeView({ resetHash: true });
     scroll.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function navigate(section, orderFormat) {
+  function navigate(section, orderFormat, uploadKind) {
     if (section === 'home') return showHome();
     if (sections[section]) {
       clearTimeout(openTimer);
-      openTimer = setTimeout(() => openView(section, { orderFormat }), 95);
+      openTimer = setTimeout(() => openView(section, { orderFormat, uploadKind }), 95);
     }
   }
   document.addEventListener('click', event => {
@@ -139,7 +153,7 @@
     if (trigger && (!trigger.closest('#sheet-body') || trigger.hasAttribute('data-sheet-nav'))) {
       event.preventDefault();
       const orderFormat = trigger.id === 'id450-personal' ? formatOptions[selectedFormat] : undefined;
-      navigate(trigger.dataset.action, orderFormat);
+      navigate(trigger.dataset.action, orderFormat, trigger.dataset.uploadKind);
       return;
     }
     const format=event.target.closest('[data-format]');
