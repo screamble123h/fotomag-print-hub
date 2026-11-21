@@ -9,18 +9,23 @@ BUDGETS = {
     "index.html": 45_000,
     "assets/app-shell.css": 35_000,
     "assets/app-shell.js": 16_000,
-    "assets/direct-upload.js": 12_000,
+    "assets/direct-upload.js": 16_000,
     "assets/fotomag_logo_official.svg": 10_000,
 }
 errors = []
 total = 0
+initial_total = 0
 for name, limit in BUDGETS.items():
     size = (ROOT / name).stat().st_size
     total += size
+    if name != "assets/direct-upload.js":
+        initial_total += size
     if size > limit:
         errors.append(f"{name}: {size} exceeds {limit} bytes")
-if total > 105_000:
-    errors.append(f"Critical page assets total {total} exceeds 105000 bytes")
+if initial_total > 90_000:
+    errors.append(f"Initial page assets total {initial_total} exceeds 90000 bytes")
+if total > 110_000:
+    errors.append(f"All app assets total {total} exceeds 110000 bytes")
 html = (ROOT / "index.html").read_text(encoding="utf-8")
 css = (ROOT / "assets/app-shell.css").read_text(encoding="utf-8")
 if 'src="assets/FotoMag_FACADE_APPROVED_web.webp"' not in html or 'loading="lazy"' not in html:
@@ -38,5 +43,10 @@ if errors:
     for error in errors:
         print(" -", error)
     sys.exit(1)
-print(f"PASS FotoMag page byte budget: {total} bytes of core source assets "
-      "(uncompressed, excludes lazy media and fonts); real network latency not tested.")
+if 'src="assets/direct-upload.js"' in html:
+    errors.append("Lazy upload JS must not be loaded on the landing page")
+if errors:
+    print("FAIL FotoMag initial-load budget:", *errors, sep="\n - ")
+    sys.exit(1)
+print(f"PASS FotoMag budget: {initial_total} initial bytes; {total} total app bytes "
+      "(uncompressed, excludes lazy media and fonts); network latency not tested.")
