@@ -8,10 +8,19 @@ services:
     volumes:
       - upload_data:/data
     networks: [internal]
+    depends_on: [clamav]
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=32m
     security_opt: ["no-new-privileges:true"]
+  clamav:
+    image: clamav/clamav:1.5
+    restart: unless-stopped
+    networks: [internal]
+    volumes:
+      - clamav_db:/var/lib/clamav
+    security_opt: ["no-new-privileges:true"]
+    # TCP 3310 is internal only, never published to host or internet.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -25,6 +34,7 @@ services:
     depends_on: [gateway]
 volumes:
   upload_data:
+  clamav_db:
   caddy_data:
   caddy_config:
 networks:
