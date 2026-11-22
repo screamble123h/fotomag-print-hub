@@ -3,6 +3,8 @@ import hashlib
 import os
 import tempfile
 
+import pytest
+
 os.environ["FOTOMAG_DATA_DIR"] = tempfile.mkdtemp(prefix="fotomag-api-test-")
 os.environ["FOTOMAG_AGENT_TOKEN"] = "test" + ("Z" * 64)
 os.environ["FOTOMAG_SITE_ORIGIN"] = "https://screamble123h.github.io"
@@ -19,13 +21,19 @@ JPEG = b"\xff\xd8\xff\xe0" + b"FotoMag test jpeg" + b"\xff\xd9"
 PDF = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"
 
 
+@pytest.fixture(autouse=True)
+def approved_test_consent_and_scanner(monkeypatch):
+    monkeypatch.setattr(gateway_api, "CONSENT_VERSION", "2026-11-22")
+    monkeypatch.setattr(gateway_api, "scanner_ready", lambda: True)
+
+
 def new_order(files=None):
     if files is None:
         files = [{"name": "photo.jpg", "size": len(JPEG)}]
     payload = {
         "kind": "photos", "phone": "+7 (900) 123-45-67",
         "client_name": "Алексей", "comment": "10x15 x2",
-        "consent": True, "files": files,
+        "consent": True, "consent_version": gateway_api.CONSENT_VERSION, "files": files,
     }
     headers = dict(ORIGIN)
     if gateway_api.UPLOAD_MODE == "production":
@@ -41,11 +49,11 @@ def test_health_and_protection():
     assert client.get("/api/agent/orders").status_code == 401
     assert client.post("/api/orders", json={
         "kind": "photos", "phone": "+79001234567",
-        "consent": True, "files": [{"name": "a.jpg", "size": 10}],
+        "consent": True, "consent_version": gateway_api.CONSENT_VERSION, "files": [{"name": "a.jpg", "size": 10}],
     }, headers={"Origin": "https://evil.example"}).status_code == 403
     assert client.post("/api/orders", json={
         "kind": "photos", "phone": "+79001234567",
-        "consent": False, "files": [{"name": "a.jpg", "size": 10}],
+        "consent": False, "consent_version": gateway_api.CONSENT_VERSION, "files": [{"name": "a.jpg", "size": 10}],
     }, headers=ORIGIN).status_code == 422
     assert new_order([{"name": "malware.exe", "size": 10}]).status_code == 415
 
@@ -93,6 +101,9 @@ def test_full_order_delivered_to_agent_with_checksum():
     delivered = client.get(status_url, headers={"Authorization": "Bearer " + token})
     assert delivered.json()["status"] == "received"
     assert delivered.json()["downloaded_to_pc"] is True
+    repeated = client.post(f"/api/orders/{order_id}/submit",
+                           headers={"Authorization": "Bearer " + token})
+    assert repeated.status_code == 200 and repeated.json()["status"] == "received"
     queue_after = client.get("/api/agent/orders", headers=ADMIN).json()["orders"]
     assert not any(o["order_id"] == order_id for o in queue_after)
 
@@ -112,7 +123,7 @@ def test_reject_different_magic_and_incomplete_bytes():
 def test_walk_in_without_phone_or_name_can_submit():
     """Counter customers may upload with a receipt only, without extra typing."""
     response = client.post("/api/orders", json={
-        "kind": "documents", "consent": True, "files": [
+        "kind": "documents", "consent": True, "consent_version": gateway_api.CONSENT_VERSION, "files": [
             {"name": "scan.pdf", "size": len(PDF)}
         ],
     }, headers=ORIGIN)
@@ -197,7 +208,7 @@ def test_production_requires_trusted_proxy_header(monkeypatch):
     monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "production")
     monkeypatch.setenv("FOTOMAG_CLAMD_HOST", "internal-av.test")
     response = client.post("/api/orders", json={
-        "kind": "photos", "consent": True,
+        "kind": "photos", "consent": True, "consent_version": gateway_api.CONSENT_VERSION,
         "files": [{"name": "scan.jpg", "size": len(JPEG)}],
     }, headers=ORIGIN)
     assert response.status_code == 503
@@ -266,3 +277,33 @@ def test_health_disables_upload_when_storage_low(monkeypatch):
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json()["accepting_uploads"] is False
+
+
+def test_production_rejects_draft_consent_and_offline_scanner(monkeypatch):
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "production")
+    monkeypatch.setenv("FOTOMAG_CLAMD_HOST", "scanner.test")
+    monkeypatch.setattr(gateway_api, "scanner_ready", lambda: False)
+    assert new_order().status_code == 503
+    monkeypatch.setattr(gateway_api, "scanner_ready", lambda: True)
+    monkeypatch.setattr(gateway_api, "CONSENT_VERSION", "2026-11-22-draft")
+    assert client.get("/api/health").json()["accepting_uploads"] is False
+    assert new_order().status_code == 503
+
+
+def test_consent_is_explicit_versioned_and_recorded():
+    payload = {"kind": "photos", "consent": True, "consent_version": "old",
+               "files": [{"name": "photo.jpg", "size": len(JPEG)}]}
+    assert client.post("/api/orders", json=payload, headers=ORIGIN).status_code == 409
+    payload.update(consent="true", consent_version=gateway_api.CONSENT_VERSION)
+    assert client.post("/api/orders", json=payload, headers=ORIGIN).status_code == 422
+    order = new_order().json()
+    with gateway_api.db() as connection:
+        row = connection.execute("SELECT * FROM orders WHERE id=?",
+                                 (order["order_id"],)).fetchone()
+    assert row["consent_version"] == gateway_api.CONSENT_VERSION
+    assert row["consent_ts"] == row["created_ts"]
+
+
+def test_proxy_cannot_publish_local_staging():
+    response = client.post("/api/orders", headers={**ORIGIN, "X-FotoMag-Client-IP": "198.51.100.91"})
+    assert response.status_code == 503

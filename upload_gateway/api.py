@@ -23,8 +23,8 @@ from typing import Literal
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field, StrictBool
 from upload_gateway.antivirus import scan_file, scanner_ready, ScannerUnavailable, ThreatDetected
 
 DATA = Path(os.environ.get("FOTOMAG_DATA_DIR", "/data")).resolve()
@@ -47,6 +47,13 @@ MIN_FREE_BYTES = int(os.environ.get('FOTOMAG_MIN_FREE_BYTES', str(3 * 1024 ** 3)
 UPLOAD_MODE = os.environ.get('FOTOMAG_UPLOAD_MODE', 'disabled')
 if UPLOAD_MODE not in ('disabled', 'staging', 'production'):
     raise RuntimeError('Invalid upload mode')
+CONSENT_VERSION = os.environ.get("FOTOMAG_CONSENT_VERSION", "2026-11-22-draft")
+
+
+def consent_ready():
+    return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}(?:-v[1-9]\d*)?", CONSENT_VERSION))
+
+
 SHOP_TZ = timezone(timedelta(hours=4))  # Izhevsk/Samara standard UTC+4.
 EXTS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".pdf", ".docx", ".xlsx"}
 
@@ -63,6 +70,11 @@ app.add_middleware(
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
+    if (UPLOAD_MODE == "staging" and request.url.path.startswith("/api/orders")
+            and "x-fotomag-client-ip" in request.headers):
+        # The local reverse proxy always sets this header on external requests.
+        return JSONResponse({"detail": "Тестовый приём доступен только локально"},
+                            status_code=503, headers={"Cache-Control": "no-store"})
     response = await call_next(request)
     response.headers["Cache-Control"] = "no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -109,6 +121,10 @@ def initialize():
         """)
         # Support an existing test database without deleting any orders.
         columns = {row[1] for row in c.execute("PRAGMA table_info(orders)")}
+        if "consent_version" not in columns:
+            c.execute("ALTER TABLE orders ADD COLUMN consent_version TEXT")
+        if "consent_ts" not in columns:
+            c.execute("ALTER TABLE orders ADD COLUMN consent_ts INTEGER")
         if "client_name" not in columns:
             c.execute("ALTER TABLE orders ADD COLUMN client_name TEXT NOT NULL DEFAULT ''")
 
@@ -126,7 +142,8 @@ class IncomingOrder(BaseModel):
     phone: str = Field(default="", max_length=32)
     client_name: str = Field(default="", max_length=70)
     comment: str = Field(default="", max_length=500)
-    consent: bool
+    consent: StrictBool
+    consent_version: str = Field(min_length=1, max_length=48)
     files: list[IncomingFile] = Field(min_length=1, max_length=MAX_FILES)
 
 
@@ -153,6 +170,14 @@ def require_order(order_id: str, auth: str | None, c: sqlite3.Connection):
     if not hmac.compare_digest(row["token_sha256"], hashlib.sha256(token.encode()).hexdigest()):
         reject(404, "Заявка не найдена")
     return row
+
+
+def require_valid_consent(order: sqlite3.Row):
+    if UPLOAD_MODE == "production" and (
+        not consent_ready() or not order["consent_version"] or not order["consent_ts"]
+        or order["consent_version"].endswith("-draft")
+    ):
+        reject(409, "Оформите новую заявку с действующим согласием")
 
 
 def sniff(path: Path, ext: str) -> bool:
@@ -192,7 +217,7 @@ def health():
         space_ready = shutil.disk_usage(DATA).free >= MIN_FREE_BYTES
     except OSError:
         space_ready = False
-    enabled = UPLOAD_MODE == "production" and space_ready and scanner_ready()
+    enabled = UPLOAD_MODE == "production" and consent_ready() and space_ready and scanner_ready()
     return {"status": "ok", "service": "fotomag-direct-upload",
             "accepting_uploads": enabled}
 
@@ -207,6 +232,10 @@ def create_order(payload: IncomingOrder, request: Request):
         reject(503, 'Невозможно принимать файлы без антивируса')
     if request.headers.get("origin") != SITE_ORIGIN:
         reject(403, "Недопустимый источник запроса")
+    if UPLOAD_MODE == "production" and not consent_ready():
+        reject(503, "Приём ожидает утверждения текста согласия")
+    if payload.consent_version != CONSENT_VERSION:
+        reject(409, "Текст согласия изменился. Обновите страницу и прочитайте его снова")
     if not payload.consent:
         reject(422, "Требуется согласие на обработку данных")
     phone = payload.phone.strip()
@@ -235,6 +264,8 @@ def create_order(payload: IncomingOrder, request: Request):
     ip_hash = hmac.new(AGENT_TOKEN.encode(), remote_ip.encode(), hashlib.sha256).hexdigest()
     if shutil.disk_usage(DATA).free < MIN_FREE_BYTES:
         reject(507, "Недостаточно места в хранилище, попробуйте позже")
+    if UPLOAD_MODE == "production" and not scanner_ready():
+        reject(503, "Антивирус временно недоступен")
     now = int(time.time())
     order_id = uuid.uuid4().hex
     receipt = "FM-W-" + datetime.fromtimestamp(now, SHOP_TZ).strftime("%Y%m%d") + "-" + order_id[:7].upper()
@@ -258,10 +289,10 @@ def create_order(payload: IncomingOrder, request: Request):
         c.execute(
             "INSERT INTO orders"
             "(id,receipt,token_sha256,kind,phone,client_name,comment,ip_hash,"
-            "status,created_ts,received_ts) VALUES(?,?,?,?,?,?,?,?,?,?,NULL)",
+            "status,created_ts,consent_version,consent_ts) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
             (order_id, receipt, hashlib.sha256(token.encode()).hexdigest(),
              payload.kind, phone, payload.client_name.strip(),
-             payload.comment.strip(), ip_hash, "uploading", now),
+             payload.comment.strip(), ip_hash, "uploading", now, CONSENT_VERSION, now),
         )
         for fid, name, ext, size in file_specs:
             c.execute(
@@ -283,6 +314,7 @@ async def upload_file(order_id: str, file_id: str, request: Request,
         reject(403, "Недопустимый источник запроса")
     with db() as c:
         order = require_order(order_id, authorization, c)
+        require_valid_consent(order)
         if order["status"] != "uploading":
             reject(409, "Отправка заявки уже завершена")
         info = c.execute(
@@ -333,10 +365,11 @@ def submit_order(order_id: str, authorization: str | None = Header(default=None)
         reject(503, "Приём файлов временно отключён")
     with db() as c:
         order = require_order(order_id, authorization, c)
-        if order["status"] not in ("uploading", "pending"):
+        if order["status"] in ("pending", "received"):
+            return {"received": True, "receipt": order["receipt"], "status": "received" if order["status"] == "received" else "queued"}
+        if order["status"] != "uploading":
             reject(409, "Заявка уже обработана или отклонена")
-        if order["status"] == "pending":
-            return {"received": True, "receipt": order["receipt"], "status": "queued"}
+        require_valid_consent(order)
         files = c.execute(
             "SELECT stored_path, uploaded_size, sha256 FROM files WHERE order_id=?",
             (order_id,),
@@ -364,6 +397,8 @@ def submit_order(order_id: str, authorization: str | None = Header(default=None)
     with db() as c:
         c.execute("BEGIN IMMEDIATE")
         order = require_order(order_id, authorization, c)
+        if order["status"] == "received":
+            return {"received": True, "receipt": order["receipt"], "status": "received"}
         if order["status"] not in ("uploading", "pending"):
             reject(409, "Заявка уже обработана")
         c.execute("UPDATE orders SET status='pending' WHERE id=?", (order_id,))

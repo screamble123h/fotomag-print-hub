@@ -193,7 +193,7 @@
         }
       } catch (_) { /* The queued order is retained while connectivity is unavailable. */ }
     }
-    if (activeReceipt === receipt) status("✓ Заявка " + receipt + " принята сервером. Ожидает загрузки на компьютер FotoMag — сотрудник свяжется с вами.");
+    if (activeReceipt === receipt) status("✓ Заявка " + receipt + " принята сервером. Подтверждение записи на диск ещё не поступило. Сохраните номер заявки.");
   }
 
   async function send(form) {
@@ -207,7 +207,8 @@
     const phone = get("upload-phone")?.value.trim() || "";
     const client_name = get("upload-name")?.value.trim() || "";
     const comment = get("upload-comment")?.value.trim() || "";
-    const consent = Boolean(get("upload-consent")?.checked);
+    const checkbox = get("upload-consent");
+    const consent = Boolean(checkbox?.checked);
     if (!consent) return status("Подтвердите согласие на обработку данных.", true);
     const submit = get("upload-submit");
     const progress = get("upload-progress");
@@ -219,7 +220,7 @@
     try {
       status("Оформляем заявку и готовим защищённую загрузку…");
       created = await post("/api/orders", {
-        kind, phone, client_name, comment, consent,
+        kind, phone, client_name, comment, consent, consent_version: checkbox.dataset.consentVersion,
         files: files.map(f => ({name: f.name, size: f.size}))
       });
       if (!created.order_id || !created.upload_token || created.files?.length !== files.length)

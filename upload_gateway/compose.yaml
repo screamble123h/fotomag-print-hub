@@ -24,7 +24,8 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
-    ports: ["80:80", "443:443"]
+    # Optional local integration fixture. The shop uses native Windows services.
+    ports: ["127.0.0.1:18080:80", "127.0.0.1:18443:443"]
     env_file: .env
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro

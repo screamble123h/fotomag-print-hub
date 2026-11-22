@@ -63,7 +63,7 @@ class Auditor(HTMLParser):
         if tag=='a':
             href=a.get('href','')
             self.links.append(a)
-            if href.startswith('#'):pass
+            if href.startswith('#') or href in ('privacy.html', 'privacy.html#consent'):pass
             elif href.startswith('tel:'):
                 if href!='tel:+79124665090':errors.append('Unexpected telephone destination')
             elif href.startswith('mailto:'):
@@ -141,10 +141,13 @@ elif api_meta.group(1):
     privacy=ROOT/'privacy.html'
     if any(x in html for x in ('Перед запуском услуги','До запуска публикуются')) or not privacy.is_file():
         errors.append('Legal operator/privacy information required before live API activation')
-    if 'href="privacy.html"' not in html:
+    if 'href="privacy.html"' not in html or 'href="privacy.html#consent"' not in html:
         errors.append('Client consent must link to the published privacy page')
     if privacy.is_file():
         policy=privacy.read_text(encoding='utf-8')
+        approved_version = re.search(r'data-consent-version="([0-9]{4}-[0-9]{2}-[0-9]{2}(?:-v[1-9][0-9]*)?)"', html)
+        if not approved_version or approved_version.group(0) not in policy:
+            errors.append('Form must match the approved consent revision')
         if any(mark in policy for mark in ('[заполнить','[указать','[ФИО','PLACEHOLDER','TODO_PRIVACY')):
             errors.append('Privacy page still contains placeholders')
 else:
