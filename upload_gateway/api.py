@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field, StrictBool
@@ -325,6 +326,10 @@ async def upload_file(order_id: str, file_id: str, request: Request,
         if info["uploaded_size"] is not None:
             return {"ok": True, "sha256": info["sha256"]}
         expected, ext = info["expected_size"], info["extension"]
+    if UPLOAD_MODE == "production" and not await run_in_threadpool(scanner_ready):
+        reject(503, "Антивирус временно недоступен")
+    if shutil.disk_usage(DATA).free - expected < MIN_FREE_BYTES:
+        reject(507, "Недостаточно места в хранилище, попробуйте позже")
     folder = UPLOADS / order_id
     folder.mkdir(parents=True, exist_ok=True)
     temp = folder / (file_id + "." + uuid.uuid4().hex + ".part")

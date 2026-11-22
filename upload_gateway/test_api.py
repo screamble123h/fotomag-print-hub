@@ -307,3 +307,20 @@ def test_consent_is_explicit_versioned_and_recorded():
 def test_proxy_cannot_publish_local_staging():
     response = client.post("/api/orders", headers={**ORIGIN, "X-FotoMag-Client-IP": "198.51.100.91"})
     assert response.status_code == 503
+
+
+def test_scanner_stopped_between_order_and_upload(monkeypatch):
+    monkeypatch.setattr(gateway_api, "UPLOAD_MODE", "production")
+    monkeypatch.setenv("FOTOMAG_CLAMD_HOST", "scanner.test")
+    created = new_order().json()
+    monkeypatch.setattr(gateway_api, "scanner_ready", lambda: False)
+    file_id = created["files"][0]["file_id"]
+    response = client.put(
+        f"/api/orders/{created['order_id']}/files/{file_id}", content=JPEG,
+        headers={**ORIGIN, "Authorization": "Bearer " + created["upload_token"]},
+    )
+    assert response.status_code == 503
+    assert not (gateway_api.UPLOADS / created["order_id"]).exists()
+    with gateway_api.db() as connection:
+        row = connection.execute("SELECT uploaded_size FROM files WHERE id=?", (file_id,)).fetchone()
+    assert row["uploaded_size"] is None
