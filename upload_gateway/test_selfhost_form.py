@@ -54,22 +54,29 @@ class SelfHostFormTests(unittest.TestCase):
         origin = "https://files.example.org:8443"
         with TemporaryDirectory() as temp:
             parent = Path(temp)
-            privacy = parent / "approved.html"
+            legal = parent / "legal"
+            legal.mkdir()
+            privacy = legal / "privacy.html"
+            consent = legal / "consent.html"
             version = "2000-01-01-v1"
             document = f'<section id="consent" data-consent-version="{version}">Synthetic test</section>'.encode()
             privacy.write_bytes(document)
+            consent.write_bytes(document)
             target = parent / "release"
-            for source, tag in ((None, version), (privacy, None), (privacy, "2000-01-01-v2"),
-                                (privacy, "2000-01-01-draft")):
+            for source, tag in ((None, version), (legal, None), (legal, "2000-01-01-v2"),
+                                (legal, "2000-01-01-draft")):
                 with self.assertRaises(ValueError):
-                    build_release(origin, target, approved_privacy=source, consent_version=tag)
+                    build_release(origin, target, approved_legal=source, consent_version=tag)
                 self.assertFalse(target.exists())
             for invalid in (document + document, b"<!-- TODO_PRIVACY -->" + document):
                 privacy.write_bytes(invalid)
                 with self.assertRaises(ValueError):
-                    build_release(origin, target, approved_privacy=privacy, consent_version=version)
+                    build_release(origin, target, approved_legal=legal, consent_version=version)
             privacy.write_bytes(document)
-            build_release(origin, target, approved_privacy=privacy, consent_version=version)
+            build_release(origin, target, approved_legal=legal, consent_version=version)
             self.assertEqual((target / "site/privacy.html").read_bytes(), document)
+            self.assertEqual((target / "site/consent.html").read_bytes(), document)
+            self.assertIn('href="consent.html"', (target / "site/index.html").read_text(encoding="utf-8"))
+            self.assertIn("/consent.html", (target / "Caddyfile.form").read_text(encoding="utf-8"))
             self.assertIn(f'data-consent-version="{version}"',
                           (target / "site/index.html").read_text(encoding="utf-8"))

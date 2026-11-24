@@ -47,7 +47,7 @@ class ConsentSection(HTMLParser):
             self.versions.append(values.get("data-consent-version"))
 
 
-def approved_privacy_document(path: Path, version: str) -> bytes:
+def approved_document(path: Path, version: str) -> bytes:
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}(?:-v[1-9]\d*)?", version):
         raise ValueError("Expected the approved consent date or version")
     date.fromisoformat(version[:10])
@@ -63,8 +63,8 @@ def approved_privacy_document(path: Path, version: str) -> bytes:
     return raw
 
 
-def build_release(origin: str, destination: Path, *, approved_privacy: Path | None = None,
-                  consent_version: str | None = None) -> Path:
+def build_release(origin: str, destination: Path, legal_draft: Path | None = None, *,
+                  approved_legal: Path | None = None, consent_version: str | None = None) -> Path:
     origin = https_origin(origin)
     destination = destination.resolve()
     if destination.is_relative_to(SOURCE):
@@ -78,22 +78,41 @@ def build_release(origin: str, destination: Path, *, approved_privacy: Path | No
     html = original.replace(endpoint, f'<meta content="{origin}" name="fotomag-upload-api"/>')
     html = html.replace("connect-src 'none'", "connect-src 'self'").replace(PAGES, origin + "/")
 
-    if (approved_privacy is None) != (consent_version is None):
-        raise ValueError("Supply the approved privacy document and consent version together")
-    privacy_bytes = None
-    if approved_privacy is not None:
-        privacy_bytes = approved_privacy_document(approved_privacy, consent_version)
-        marker = 'data-consent-version="2026-11-22-draft"'
-        if html.count(marker) != 1:
-            raise ValueError("Review the form: its draft consent marker has changed")
-        html = html.replace(marker, f'data-consent-version="{consent_version}"')
+    if (approved_legal is None) != (consent_version is None):
+        raise ValueError("Supply the approved legal folder and consent version together")
+    if legal_draft is not None and approved_legal is not None:
+        raise ValueError("Choose one legal edition for the release")
+    legal_files = {}
+    public_files = PUBLIC_FILES
+    if legal_draft is not None or approved_legal is not None:
+        # Existing TZ18 policy and separate consent keep their own filenames.
+        directory = approved_legal if approved_legal is not None else legal_draft
+        version = consent_version if approved_legal is not None else "2026-11-23-draft"
+        previous = 'data-consent-version="2026-11-22-draft"'
+        previous_link = 'href="privacy.html#consent"'
+        if html.count(previous) != 1 or html.count(previous_link) != 1:
+            raise ValueError("Review the form: its consent version or link has changed")
+        for name in ("privacy.html", "consent.html"):
+            if approved_legal is not None:
+                legal_files[name] = approved_document(directory / name, version)
+            else:
+                data = (directory / name).read_bytes()
+                section = ConsentSection()
+                section.feed(data.decode("utf-8-sig"))
+                section.close()
+                if section.versions != [version]:
+                    raise ValueError(f"Unexpected draft consent version in {name}")
+                legal_files[name] = data
+        html = html.replace(previous, f'data-consent-version="{version}"')
+        html = html.replace(previous_link, 'href="consent.html"')
+        public_files = (*PUBLIC_FILES, "consent.html")
 
     # The root is supplied as a quoted import argument by the local Caddyfile.
     # The separate route file stays outside the public directory.
     routes = (
         "@fotomag_form {\n"
         "    method GET HEAD\n"
-        f"    path / {' '.join('/' + name for name in PUBLIC_FILES)}\n"
+        f"    path / {' '.join('/' + name for name in public_files)}\n"
         "}\n"
         "handle @fotomag_form {\n"
         "    root * {args[0]}\n"
@@ -109,9 +128,9 @@ def build_release(origin: str, destination: Path, *, approved_privacy: Path | No
         release = Path(temporary) / "release"
         site = release / "site"
         (site / "assets").mkdir(parents=True)
-        for name in PUBLIC_FILES:
-            if name == "privacy.html" and privacy_bytes is not None:
-                (site / name).write_bytes(privacy_bytes)
+        for name in public_files:
+            if name in legal_files:
+                (site / name).write_bytes(legal_files[name])
             elif name != "index.html":
                 shutil.copyfile(SOURCE / name, site / name)
         (site / "index.html").write_text(html, encoding="utf-8")
@@ -124,8 +143,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--origin", required=True, help="Public HTTPS origin of this Caddy listener, including :8443")
     parser.add_argument("--output", type=Path, required=True, help="New release directory outside the repository")
-    parser.add_argument("--approved-privacy", type=Path, help="Owner-approved UTF-8 HTML containing the consent section")
+    parser.add_argument("--legal-draft", type=Path, help="Reviewed draft folder containing privacy.html and consent.html")
+    parser.add_argument("--approved-legal", type=Path, help="Owner-approved folder containing privacy.html and consent.html")
     parser.add_argument("--consent-version", help="Approved version also configured in FOTOMAG_CONSENT_VERSION")
     options = parser.parse_args()
-    print(build_release(options.origin, options.output, approved_privacy=options.approved_privacy,
+    print(build_release(options.origin, options.output, options.legal_draft, approved_legal=options.approved_legal,
                         consent_version=options.consent_version))
