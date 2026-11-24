@@ -1,0 +1,30 @@
+{$FOTOMAG_API_DOMAIN} {
+    # No access logs containing URLs, uploaded names, tokens or other PII.
+    encode zstd gzip
+    header {
+        -Server
+        Cache-Control "no-store"
+        X-Content-Type-Options "nosniff"
+        Strict-Transport-Security "max-age=31536000"
+        X-Robots-Tag "noindex, nofollow"
+    }
+    request_body {
+        # One raw file per PUT. This is exactly 25 MiB in bytes.
+        max_size 26214400
+    }
+    @small path /api/orders /api/orders/*/submit
+    request_body @small {
+        max_size 16384
+    }
+    @api path_regexp ^/api/(health|orders(/[0-9a-f]{32}/(status|submit|files/[0-9a-f]{32}))?)$
+    handle @api {
+        reverse_proxy {$FOTOMAG_API_UPSTREAM:gateway:8000} {
+            # Caddy overwrites client-supplied headers with the true socket peer.
+            # Do not place a foreign CDN in front of this origin without reviewing IP handling.
+            header_up X-FotoMag-Client-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto https
+        }
+    }
+    respond "Not found" 404
+}

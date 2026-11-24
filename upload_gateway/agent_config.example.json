@@ -1,0 +1,7 @@
+{
+  "api_url": "https://files.example.ru",
+  "agent_token": "REPLACE_WITH_PRIVATE_SERVER_GENERATED_TOKEN",
+  "archive_root": "D:\\2026",
+  "date_subpath": "%m/%d",
+  "poll_seconds": 30
+}
