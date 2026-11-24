@@ -19,6 +19,7 @@
   const selectedFiles = () => [...(get("upload-files")?.files || [])];
   const humanSize = bytes => (bytes / (1024 * 1024)).toFixed(1).replace(".", ",") + " МБ";
   let sending = false;
+  let pendingAttempt = null;
   let activeReceipt = "";
   let readinessGeneration = 0;
   let gatewayReady = false;
@@ -187,7 +188,7 @@
         if (!response.ok) continue;
         const result = await response.json();
         if (result.receipt !== receipt) return;
-        if (result.downloaded_to_pc && activeReceipt === receipt) {
+        if (result.downloaded_to_pc === true && result.status === "received" && activeReceipt === receipt) {
           status("✓ Заявка " + receipt + " доставлена на компьютер FotoMag в канал «Напрямую». Сотрудник проверит файлы перед печатью.");
           return;
         }
@@ -216,28 +217,42 @@
     activeReceipt = "";
     if (submit) submit.disabled = true;
     if (progress) { progress.hidden = false; progress.value = 0; }
-    let created;
     try {
-      status("Оформляем заявку и готовим защищённую загрузку…");
-      created = await post("/api/orders", {
+      const details = {
         kind, phone, client_name, comment, consent, consent_version: checkbox.dataset.consentVersion,
         files: files.map(f => ({name: f.name, size: f.size}))
-      });
-      if (!created.order_id || !created.upload_token || created.files?.length !== files.length)
-        throw new Error("Неверный ответ сервера.");
+      };
+      const signature = JSON.stringify(details);
+      if (!pendingAttempt || pendingAttempt.signature !== signature ||
+          !files.every((file, i) => file === pendingAttempt.files[i])) {
+        const random = crypto.getRandomValues(new Uint8Array(32));
+        pendingAttempt = {signature, files, nextFile: 0, created: null,
+          key: Array.from(random, byte => byte.toString(16).padStart(2, "0")).join("")};
+      }
+      const attempt = pendingAttempt;
+      if (!attempt.created) {
+        status("Оформляем заявку и готовим защищённую загрузку…");
+        const reply = await post("/api/orders", {...details, request_key: attempt.key});
+        if (!reply.order_id || !reply.receipt || !reply.upload_token || reply.files?.length !== files.length)
+          throw new Error("Неверный ответ сервера.");
+        attempt.created = reply;
+      }
+      const created = attempt.created;
       const total = files.reduce((n, f) => n + f.size, 0);
-      let sent = 0;
-      for (let i = 0; i < files.length; i++) {
+      let sent = files.slice(0, attempt.nextFile).reduce((n, f) => n + f.size, 0);
+      for (let i = attempt.nextFile; i < files.length; i++) {
         const f = files[i];
         await put("/api/orders/" + created.order_id + "/files/" + created.files[i].file_id,
                   f, created.upload_token, i + 1, total, sent);
+        attempt.nextFile = i + 1;
         sent += f.size;
         if (progress) progress.value = Math.floor(sent * 100 / total);
       }
       const answer = await post("/api/orders/" + created.order_id + "/submit", {},
                                 created.upload_token);
-      if (!answer.received || answer.receipt !== created.receipt)
+      if (answer.received !== true || answer.receipt !== created.receipt)
         throw new Error("Не удалось подтвердить доставку файлов.");
+      pendingAttempt = null;
       if (progress) progress.value = 100;
       activeReceipt = answer.receipt;
       status("✓ Заявка " + answer.receipt + " принята сервером. Передача на компьютер FotoMag ожидается; это ещё не подтверждение печати.");
@@ -247,8 +262,10 @@
       updateKindChoices();
       if (submit) submit.textContent = "Отправить ещё файлы";
     } catch (error) {
+      const receipt = pendingAttempt?.created?.receipt;
       status((error?.message || "Ошибка отправки.") +
-        " Если доставка не подтверждена, используйте резервный канал ниже.", true);
+        (receipt ? " Номер заявки: " + receipt + "." : "") +
+        " Оставьте эту вкладку открытой и нажмите кнопку отправки ещё раз.", true);
     } finally {
       sending = false;
       if (submit) submit.disabled = !gatewayReady;

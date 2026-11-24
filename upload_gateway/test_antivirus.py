@@ -79,3 +79,18 @@ def test_clamav_without_endpoint_not_ready(monkeypatch):
     assert antivirus.scanner_ready() is False
     with pytest.raises(antivirus.ScannerUnavailable):
         antivirus.scan_file(Path("nonexistent"))
+
+
+def test_only_complete_exact_clean_verdict_is_accepted(tmp_path, monkeypatch):
+    monkeypatch.setenv("FOTOMAG_CLAMD_HOST", "scanner.test")
+    sample = tmp_path / "sample.txt"
+    sample.write_bytes(b"test")
+    for reply in (b"stream: NOT OK\x00", b"stream: OK", b"stream: OK\x00extra"):
+        monkeypatch.setattr(antivirus.socket, "create_connection", lambda address, timeout: FakeSocket(reply))
+        with pytest.raises(antivirus.ScannerUnavailable):
+            antivirus.scan_file(sample)
+    fake = FakeSocket()
+    chunks = iter([b"P", b"ON", b"G\x00"])
+    monkeypatch.setattr(fake, "recv", lambda limit: next(chunks))
+    monkeypatch.setattr(antivirus.socket, "create_connection", lambda address, timeout: fake)
+    assert antivirus.scanner_ready() is True

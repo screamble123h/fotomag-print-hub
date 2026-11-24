@@ -185,8 +185,22 @@ def create_exclusive(path: Path, value: str) -> None:
         if path.read_text(encoding="utf-8") != value:
             raise FileExistsError(f"Conflicting existing order metadata: {path}")
         return
-    with path.open("x", encoding="utf-8") as target:
-        target.write(value)
+    temp = path.with_name("." + path.name + "." + uuid.uuid4().hex + ".part")
+    try:
+        with temp.open("x", encoding="utf-8") as target:
+            target.write(value)
+            target.flush()
+            os.fsync(target.fileno())
+        try:
+            if os.name == "nt":
+                temp.rename(path)  # Atomic on one volume; refuses an existing Windows target.
+            else:
+                os.link(temp, path)  # POSIX rename would overwrite a concurrent target.
+        except FileExistsError:
+            if path.read_text(encoding="utf-8") != value:
+                raise
+    finally:
+        temp.unlink(missing_ok=True)
 
 
 def receive_order(order: dict, root: Path = ARCHIVE_ROOT,

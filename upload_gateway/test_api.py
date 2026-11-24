@@ -1,6 +1,7 @@
 """Offline integration tests for FotoMag's new private upload queue."""
 import hashlib
 import os
+import secrets
 import tempfile
 
 import pytest
@@ -19,6 +20,23 @@ ORIGIN = {"Origin": "https://screamble123h.github.io"}
 ADMIN = {"Authorization": "Bearer " + os.environ["FOTOMAG_AGENT_TOKEN"]}
 JPEG = b"\xff\xd8\xff\xe0" + b"FotoMag test jpeg" + b"\xff\xd9"
 PDF = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"
+
+
+def test_same_attempt_returns_original_receipt_and_upload_token():
+    from concurrent.futures import ThreadPoolExecutor
+    data = {"kind": "photos", "consent": True, "consent_version": gateway_api.CONSENT_VERSION,
+            "request_key": secrets.token_hex(32), "files": [{"name": "one.jpg", "size": 15},
+                                                            {"name": "two.pdf", "size": 24}]}
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        replies = list(pool.map(lambda _: client.post("/api/orders", json=data, headers=ORIGIN), range(3)))
+    assert all(r.status_code == 201 for r in replies)
+    original = replies[0].json()
+    assert all(r.json() == original for r in replies)
+    changed = client.post("/api/orders", json={**data, "kind": "documents"}, headers=ORIGIN)
+    assert changed.status_code == 409
+    with gateway_api.db() as c:
+        row = c.execute("SELECT key_sha256 FROM order_requests WHERE order_id=?", (original["order_id"],)).fetchone()
+        assert row["key_sha256"] == hashlib.sha256(bytes.fromhex(data["request_key"])).hexdigest()
 
 
 @pytest.fixture(autouse=True)

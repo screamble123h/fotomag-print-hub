@@ -18,6 +18,20 @@ class ThreatDetected(Exception):
     pass
 
 
+def read_reply(conn) -> bytes:
+    data = bytearray()
+    while len(data) < 4096:
+        block = conn.recv(min(1024, 4096 - len(data)))
+        if not block:
+            break
+        data.extend(block)
+        if b"\x00" in block:
+            if data.count(0) == 1 and data[-1] == 0:
+                return bytes(data[:-1])
+            break
+    raise ScannerUnavailable("Incomplete or invalid ClamAV reply")
+
+
 def scan_file(path: Path) -> None:
     host = os.environ.get("FOTOMAG_CLAMD_HOST", "")
     if not host:
@@ -32,18 +46,10 @@ def scan_file(path: Path) -> None:
                     conn.sendall(struct.pack("!I", len(chunk)))
                     conn.sendall(chunk)
             conn.sendall(b"\x00\x00\x00\x00")
-            answer = bytearray()
-            while len(answer) < 4096:
-                part = conn.recv(1024)
-                if not part:
-                    break
-                answer.extend(part)
-                if b"\x00" in part or b"\n" in part:
-                    break
-        verdict = bytes(answer).rstrip(b"\x00\r\n ")
-        if verdict.endswith(b"FOUND"):
+            verdict = read_reply(conn)
+        if verdict.startswith(b"stream: ") and verdict.endswith(b" FOUND"):
             raise ThreatDetected("Potentially malicious file")
-        if not verdict.endswith(b"OK"):
+        if verdict != b"stream: OK":
             raise ScannerUnavailable("ClamAV did not return an OK verdict")
     except (OSError, TimeoutError, ValueError) as e:
         raise ScannerUnavailable("ClamAV service is unavailable") from e
@@ -60,7 +66,7 @@ def scanner_ready(timeout: float = 1.5) -> bool:
         with socket.create_connection((host, port), timeout=timeout) as conn:
             conn.settimeout(timeout)
             conn.sendall(b"zPING\x00")
-            response = conn.recv(16)
-        return response.rstrip(b"\x00\r\n ") == b"PONG"
-    except (OSError, TimeoutError, ValueError):
+            response = read_reply(conn)
+        return response == b"PONG"
+    except (OSError, TimeoutError, ValueError, ScannerUnavailable):
         return False

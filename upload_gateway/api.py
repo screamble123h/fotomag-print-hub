@@ -119,6 +119,11 @@ def initialize():
                 sha256 TEXT, stored_path TEXT
             );
             CREATE INDEX IF NOT EXISTS files_order ON files(order_id);
+            CREATE TABLE IF NOT EXISTS order_requests (
+                key_sha256 TEXT PRIMARY KEY,
+                payload_hmac TEXT NOT NULL,
+                order_id TEXT NOT NULL UNIQUE REFERENCES orders(id)
+            );
         """)
         # Support an existing test database without deleting any orders.
         columns = {row[1] for row in c.execute("PRAGMA table_info(orders)")}
@@ -146,12 +151,17 @@ class IncomingOrder(BaseModel):
     consent: StrictBool
     consent_version: str = Field(min_length=1, max_length=48)
     files: list[IncomingFile] = Field(min_length=1, max_length=MAX_FILES)
+    request_key: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$", max_length=64)
 
 
 def clean_name(name: str) -> str:
     name = name.replace("\\", "/").rsplit("/", 1)[-1]
     name = re.sub(r'[\x00-\x1f\x7f<>:"/\\|?*]', "_", name)
     return name.strip(" .")[:120]
+
+
+def retry_upload_token(key: bytes, order_id: str) -> str:
+    return hmac.new(key, b"FotoMag upload v1\0" + order_id.encode("ascii"), hashlib.sha256).hexdigest()
 
 
 def reject(status: int, msg: str):
@@ -273,6 +283,24 @@ def create_order(payload: IncomingOrder, request: Request):
     token = secrets.token_urlsafe(32)
     with db() as c:
         c.execute("BEGIN IMMEDIATE")
+        if payload.request_key is not None:
+            key = bytes.fromhex(payload.request_key)
+            key_hash = hashlib.sha256(key).hexdigest()
+            canonical = payload.model_dump_json(exclude={"request_key"}).encode("utf-8")
+            payload_hash = hmac.new(key, canonical, hashlib.sha256).hexdigest()
+            existing = c.execute(
+                "SELECT r.payload_hmac,o.id,o.receipt FROM order_requests AS r "
+                "JOIN orders AS o ON o.id=r.order_id WHERE r.key_sha256=?", (key_hash,)
+            ).fetchone()
+            if existing:
+                if not hmac.compare_digest(existing["payload_hmac"], payload_hash):
+                    reject(409, "Данные заявки изменились. Оформите её заново.")
+                files = c.execute("SELECT id FROM files WHERE order_id=? ORDER BY rowid",
+                                  (existing["id"],)).fetchall()
+                return {"order_id": existing["id"], "receipt": existing["receipt"],
+                        "upload_token": retry_upload_token(key, existing["id"]),
+                        "files": [{"file_id": f["id"]} for f in files]}
+            token = retry_upload_token(key, order_id)
         hourly = c.execute(
             "SELECT COUNT(*) FROM orders WHERE ip_hash=? AND created_ts>?",
             (ip_hash, now - 3600),
@@ -300,6 +328,9 @@ def create_order(payload: IncomingOrder, request: Request):
                 "INSERT INTO files(id,order_id,original_name,extension,expected_size)"
                 " VALUES(?,?,?,?,?)", (fid, order_id, name, ext, size),
             )
+        if payload.request_key is not None:
+            c.execute("INSERT INTO order_requests(key_sha256,payload_hmac,order_id) VALUES(?,?,?)",
+                      (key_hash, payload_hash, order_id))
     return {
         "order_id": order_id, "receipt": receipt, "upload_token": token,
         "files": [{"file_id": f[0]} for f in file_specs],
@@ -467,7 +498,7 @@ def agent_orders(authorization: str | None = Header(default=None)):
         ).fetchall()
         for o in orders:
             files = c.execute(
-                "SELECT id,original_name,uploaded_size,sha256 FROM files WHERE order_id=?",
+                "SELECT id,original_name,uploaded_size,sha256 FROM files WHERE order_id=? ORDER BY rowid",
                 (o["id"],),
             ).fetchall()
             result.append({
