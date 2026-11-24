@@ -49,3 +49,27 @@ class SelfHostFormTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     build_release(origin, root)
             self.assertFalse(root.exists())
+
+    def test_release_requires_matching_consent_and_preserves_exact_approved_bytes(self):
+        origin = "https://files.example.org:8443"
+        with TemporaryDirectory() as temp:
+            parent = Path(temp)
+            privacy = parent / "approved.html"
+            version = "2000-01-01-v1"
+            document = f'<section id="consent" data-consent-version="{version}">Synthetic test</section>'.encode()
+            privacy.write_bytes(document)
+            target = parent / "release"
+            for source, tag in ((None, version), (privacy, None), (privacy, "2000-01-01-v2"),
+                                (privacy, "2000-01-01-draft")):
+                with self.assertRaises(ValueError):
+                    build_release(origin, target, approved_privacy=source, consent_version=tag)
+                self.assertFalse(target.exists())
+            for invalid in (document + document, b"<!-- TODO_PRIVACY -->" + document):
+                privacy.write_bytes(invalid)
+                with self.assertRaises(ValueError):
+                    build_release(origin, target, approved_privacy=privacy, consent_version=version)
+            privacy.write_bytes(document)
+            build_release(origin, target, approved_privacy=privacy, consent_version=version)
+            self.assertEqual((target / "site/privacy.html").read_bytes(), document)
+            self.assertIn(f'data-consent-version="{version}"',
+                          (target / "site/index.html").read_text(encoding="utf-8"))
