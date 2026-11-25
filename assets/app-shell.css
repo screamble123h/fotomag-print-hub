@@ -126,3 +126,62 @@ button, a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 @media(max-width:260px){#bot-primary-cta .light-arrow{display:none}}
 @media(max-width:260px){.content{overflow-x:clip}}
 @media(max-width:260px){.phone-head{padding-left:8px;padding-right:8px;gap:3px}.brand-img{width:78px}.location-pill{max-width:90px;min-width:0;padding:5px;font-size:8px}.location-pill b{font-size:9px}}
+
+
+/* Direct upload: small, accessible controls; no new fonts or images. */
+.tip-banner--upload{margin:12px 0 10px;background:#ffdf57;color:#141414;border:2px solid #151515;box-shadow:0 4px 0 #a99241}
+.tip-banner--upload .tip-icon{background:#171717;color:#ffdf57;min-width:42px;min-height:42px;font-size:25px;font-weight:900}
+.tip-banner--upload h3{font-size:15px;font-weight:950}
+.tip-banner--upload p{color:#383324;font-size:11px}
+.tip-banner--upload .light-arrow{color:#111}
+.tip-banner--upload:active,.tip-banner--upload.pressed{background:#ffcf31}
+.upload-service-cta,.upload-bot-fallback{display:block;width:100%;min-height:52px;border:2px solid #181818;border-radius:12px;background:#ffdb52;color:#151515;font-size:14px;font-weight:900;line-height:1.45;margin:8px 0 16px;padding:10px 12px;text-align:center}
+.upload-bot-fallback{background:#fff;border-color:#ddd5b7}
+.upload-service-cta:focus-visible,.upload-bot-fallback:focus-visible{outline:3px solid #a18b21;outline-offset:2px}
+.direct-upload-form{display:grid;gap:9px;margin:12px 0 16px}
+.direct-upload-form>label:not(.upload-consent){font-size:13px;font-weight:900;color:#222}
+.direct-upload-form select,.direct-upload-form input[type="tel"],.direct-upload-form input[type="text"],.direct-upload-form input[type="file"],.direct-upload-form textarea{display:block;width:100%;min-width:0;box-sizing:border-box;border:1.5px solid #c4bca5;border-radius:10px;padding:11px;background:#fff;color:#1e1e1e;font:inherit;font-size:14px}
+.direct-upload-form input[type="file"]{padding:14px 10px;border:2px dashed #a7923d;background:#fffae9;font-size:13px}
+.direct-upload-form input[type="file"]::file-selector-button{border:0;border-radius:8px;background:#171717;color:#ffe176;padding:10px;margin-right:9px;font:inherit;font-weight:900}
+.direct-upload-form :is(input,select,textarea):focus-visible{outline:3px solid #e7c34b;outline-offset:2px}
+.direct-upload-form textarea{resize:vertical;min-height:78px}
+.direct-upload-form .upload-consent{display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.5;color:#433e34}
+.upload-consent input{accent-color:#181818;min-width:18px;min-height:18px;margin:3px 0 0}
+.upload-small{font-size:11px;line-height:1.55;color:#615b50;margin:0 0 6px}
+.upload-status{font-size:13px;line-height:1.55;font-weight:800;color:#144d29;overflow-wrap:anywhere;min-height:16px;margin:0}
+.upload-status.is-error{color:#9a2525}
+#upload-progress{width:100%;height:14px;accent-color:#d5aa0f}
+#upload-progress[hidden]{display:none}
+#upload-submit{width:100%;margin:7px 0}
+#upload-submit:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;transform:none}
+@media(max-width:360px){.tip-banner--upload{gap:8px;padding:12px}.tip-banner--upload h3{font-size:13px}.tip-banner--upload .tip-icon{min-width:34px;min-height:36px;font-size:21px}.direct-upload-form input[type="file"]::file-selector-button{display:block;margin:0 0 8px}}
+
+
+/* Approved 21 Nov 2026: FotoMag direct upload Design A — fast single-screen form. */
+.upload-intro{margin-bottom:13px}
+.upload-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.09em;font-weight:900;color:#73694d;margin:0 0 5px}
+.upload-heading{font-size:24px;line-height:1.16;letter-spacing:-.035em;font-weight:950;color:#191919;margin:0 0 9px}
+.upload-kind-field{min-width:0;border:0;padding:0;margin:0}
+.upload-legend{font-size:12px;line-height:1.4;font-weight:900;margin-bottom:9px}
+.upload-service-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.upload-service-choice{min-width:0;min-height:47px;border:1.5px solid #d0c8b5;border-radius:10px;background:#fff;padding:7px 3px;color:#161616;font-size:11px;line-height:1.2;font-weight:900;white-space:normal}
+.upload-service-choice.is-selected,.upload-service-choice[aria-pressed="true"]{background:#fed33c;border:2px solid #151515;box-shadow:0 2px 0 #ad9641}
+.upload-service-choice:focus-visible{outline:3px solid #9d822a;outline-offset:2px}
+.direct-upload-form .upload-file-input{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important;padding:0!important}
+.direct-upload-form>label.upload-picker{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:135px;width:100%;background:#fff8d8;border:2px dashed #c5a024;border-radius:15px;text-align:center;padding:17px 8px;cursor:pointer;gap:5px;font-size:16px;color:#171717}
+.upload-picker-symbol{font-size:29px;font-weight:900;line-height:1}
+.upload-picker strong{font-size:16px;line-height:1.3}
+.upload-picker small{font-size:11px;font-weight:600;line-height:1.4;color:#615947}
+.upload-file-input:focus-visible + .upload-picker{outline:3px solid #bd9920;outline-offset:3px}
+.upload-picker:hover{background:#fff1bb}
+.upload-file-list{list-style:none;padding:0;margin:0;display:grid;gap:5px;max-height:125px;overflow:auto}
+.upload-file-list li{display:flex;justify-content:space-between;gap:7px;min-width:0;background:#fff;border:1px solid #e2dac5;border-radius:9px;padding:8px 10px;font-size:11px;line-height:1.4;color:#171717}
+.upload-file-list .upload-file-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:750}
+.upload-file-list .upload-file-size{flex:none;color:#6a6253}
+.upload-contact-extra{margin:1px 0 4px;font-size:12px;color:#554c38}
+.upload-contact-extra summary{cursor:pointer;font-size:12px;font-weight:750;list-style:revert}
+.upload-contact-extra label{display:block;margin:10px 0 5px;font-size:12px;font-weight:850}
+.upload-contact-extra input{margin-bottom:2px}
+#upload-submit{background:#141414;color:#fed33c;border:0;min-height:55px;border-radius:11px;font-weight:900;font-size:16px}
+#upload-submit:disabled{background:#2c2a25;color:#e0c478;opacity:.74}
+@media(max-width:340px){.upload-service-choice{font-size:10px;padding:6px 1px}.upload-heading{font-size:21px}.direct-upload-form>label.upload-picker{min-height:118px}}
