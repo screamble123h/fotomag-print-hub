@@ -13,34 +13,41 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Check external TLS and disabled health
+      - name: Test WAN TCP ports and validated HTTPS disabled health
         shell: bash
         run: |
           python3 - <<'PY'
-          import json, ssl, socket, sys, urllib.error, urllib.request
+          import json, ssl, socket, sys, urllib.request
           host = "fotomag-izhevsk.dynv6.net"
-          url = f"https://{host}:8443/api/health"
+          ip = socket.gethostbyname(host)
+          print("DNS_RESOLVED", ip, flush=True)
+          reach = {}
+          for port in [80, 443, 8443]:
+              try:
+                  with socket.create_connection((host, port), timeout=7):
+                      reach[port] = True
+              except (OSError, TimeoutError):
+                  reach[port] = False
+              print(f"TCP_{port}_CONNECT_OK={reach[port]}", flush=True)
+          if not reach[8443]:
+              print("FAIL_WAN_PORT_8443_UNREACHABLE", flush=True)
+              sys.exit(2)
           try:
-              ip = socket.gethostbyname(host)
-              print("DNS_RESOLVED", ip)
-              sock = socket.create_connection((host, 8443), timeout=12)
-              with ssl.create_default_context().wrap_socket(sock, server_hostname=host) as tls:
-                  print("TLS_HANDSHAKE_OK", tls.version())
+              with socket.create_connection((host, 8443), timeout=8) as sock:
+                  with ssl.create_default_context().wrap_socket(sock, server_hostname=host) as tls:
+                      print("TLS_HANDSHAKE_OK", tls.version(), flush=True)
               opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-              with opener.open(urllib.request.Request(url, headers={
-                   "User-Agent": "FotoMag-External-Health/1.0"}), timeout=12) as response:
-                  status = response.status
+              with opener.open(f"https://{host}:8443/api/health", timeout=9) as response:
+                  code = response.status
                   payload = json.loads(response.read(2048))
-              print("HTTP_STATUS", status)
-              print("SERVICE", payload.get("service"))
-              print("ACCEPTING_UPLOADS", payload.get("accepting_uploads"))
-              if status != 200 or payload.get("service") != "fotomag-direct-upload":
+              print("HTTP_STATUS", code, flush=True)
+              print("ACCEPTING_UPLOADS", payload.get("accepting_uploads"), flush=True)
+              if code != 200 or payload.get("service") != "fotomag-direct-upload":
                   sys.exit(3)
               if payload.get("accepting_uploads") is not False:
-                  print("FAIL_NOT_DISABLED")
                   sys.exit(3)
-              print("PASS_FOTOMAG_WAN_TLS_HEALTH_DISABLED")
+              print("PASS_FOTOMAG_WAN_TLS_HEALTH_DISABLED", flush=True)
           except Exception as exc:
-              print("FOTOMAG_EXTERNAL_PROBE_FAILED", type(exc).__name__)
-              sys.exit(2)
+              print("FOTOMAG_EXTERNAL_PROBE_FAILED", type(exc).__name__, flush=True)
+              sys.exit(4)
           PY
