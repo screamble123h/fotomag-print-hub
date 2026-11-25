@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate FotoMag mobile site and safe offline upload UI
+    name: Validate site security
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
