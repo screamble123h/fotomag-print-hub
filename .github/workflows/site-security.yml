@@ -5,8 +5,10 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
   validate:
     name: Validate site security
@@ -19,7 +21,9 @@ jobs:
           persist-credentials: false
       - name: Verify public page and safe destinations
         run: python3 scripts/verify_public_site.py
-      - name: Test personal contact navigation in Chrome
+      - name: Enforce lightweight mobile page budget
+        run: python3 scripts/verify_performance_budget.py
+      - name: Test smartphone navigation and disabled upload in Chrome
         run: |
           python3 -m venv "$RUNNER_TEMP/fotomag-browser"
           "$RUNNER_TEMP/fotomag-browser/bin/pip" install playwright==1.62.0
