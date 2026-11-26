@@ -98,7 +98,12 @@ def check_upload_ui(page, url):
     page.locator("#direct-upload-primary").click()
     expect(page.locator("#sheet-title")).to_have_text("Отправить файлы")
     expect(page.locator("#upload-submit")).to_be_disabled()
-    expect(page.locator("#upload-availability")).to_contain_text("готовится к запуску")
+    # Two legitimate deployment states: an unconfigured site or a configured
+    # private AGFA HTTPS endpoint not reachable by this public CI runner.
+    # Never treat either as successful upload admission.
+    note = page.locator("#upload-availability").inner_text()
+    assert any(part in note for part in
+        ("готовится к запуску", "Проверяем защищённое соединение", "Нет связи с приёмником", "Приём пока закрыт")), note
     assert page.evaluate("Boolean(window.FotoMagDirectUpload)") is True
     expect(page.locator("#upload-files")).to_have_attribute("multiple", "")
     expect(page.locator(".upload-heading")).to_have_text("Отправить файлы на печать")
