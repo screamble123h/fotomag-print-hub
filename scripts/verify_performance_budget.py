@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Static-first page performance budget; complements real tests on RU mobile networks."""
+"""Static-first page performance budget; complements real tests on RU mobile networks.
+FotoMag V3 contact strip adds 4 personal channels; cap initial page at 95 kB,
+while preserving existing 35 kB CSS and 110 kB overall asset caps.
+"""
 from pathlib import Path
 from html.parser import HTMLParser
 import sys
@@ -22,8 +25,8 @@ for name, limit in BUDGETS.items():
         initial_total += size
     if size > limit:
         errors.append(f"{name}: {size} exceeds {limit} bytes")
-if initial_total > 90_000:
-    errors.append(f"Initial page assets total {initial_total} exceeds 90000 bytes")
+if initial_total > 95_000:
+    errors.append(f"Initial page assets total {initial_total} exceeds 95000 bytes")
 if total > 110_000:
     errors.append(f"All app assets total {total} exceeds 110000 bytes")
 html = (ROOT / "index.html").read_text(encoding="utf-8")
