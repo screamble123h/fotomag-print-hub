@@ -166,15 +166,16 @@ function showHome() {
 closeView({ resetHash: true });
 scroll.scrollTo({ top: 0, behavior: 'smooth' });
 }
-function openUploadOnLocalFotoMag(section) {
-if (section === 'upload' && location.hostname === 'screamble123h.github.io') {
-location.assign('https://fotomag-izhevsk.dynv6.net:8443/#send-files');
+function openUploadOnLocalFotoMag(section, clicked = false) {
+if (section !== 'upload' || location.hostname !== 'screamble123h.github.io') return false;
+if (clicked) {
+window.open('https://fotomag-izhevsk.dynv6.net:8443/#send-files', '_blank', 'noopener,noreferrer');
+announce('Отправка доступна внутри Wi-Fi AGFA. Основной сайт останется открытым.');
+} else openView('upload', { setHash: false });
 return true;
 }
-return false;
-}
 function navigate(section, orderFormat, uploadKind) {
-if (openUploadOnLocalFotoMag(section)) return;
+if (openUploadOnLocalFotoMag(section, true)) return;
 if (section === 'home') return showHome();
 if (sections[section]) {
 clearTimeout(openTimer);
