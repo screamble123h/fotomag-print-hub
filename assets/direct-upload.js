@@ -41,7 +41,7 @@
     button.disabled = true;
     note.textContent = endpoint
       ? "Проверяем защищённое соединение с FotoMag…"
-      : "Прямая отправка готовится к запуску. Пока воспользуйтесь VK, MAX или Telegram ниже.";
+      : "В магазине подключитесь к AGFA и нажмите «Отправить через AGFA» ниже.";
     updateFiles();
     updateKindChoices();
     if (endpoint) void checkReadiness(generation);
