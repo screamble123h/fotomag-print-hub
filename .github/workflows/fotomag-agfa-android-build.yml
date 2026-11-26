@@ -29,10 +29,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Gradle 8.13
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.13'
+      - name: Download verified Gradle 8.13
+        shell: bash
+        run: |
+          curl -fsSL --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-8.13-bin.zip \
+            -o "$RUNNER_TEMP/gradle-8.13-bin.zip"
+          echo "20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78  $RUNNER_TEMP/gradle-8.13-bin.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle-8.13-bin.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-8.13/bin" >> "$GITHUB_PATH"
       - name: Verify installed SDK
         shell: bash
         run: |
