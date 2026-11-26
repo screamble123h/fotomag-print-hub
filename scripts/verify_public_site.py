@@ -159,6 +159,13 @@ if manifest.get('start_url')!='./' or manifest.get('scope')!='./':errors.append(
 for f in [HTML,CSS,JS,UPLOAD_JS]:
     t=f.read_text(encoding='utf-8')
     if re.search(r'ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{80,}|AKIA[0-9A-Z]{16}|-----BEGIN (?:RSA )?PRIVATE KEY-----',t):errors.append('Possible secret in '+f.name)
+# A failed in-shop upload host must never replace the public home with a browser error.
+if 'function openUploadOnLocalFotoMag' in js:
+    if "location.assign('https://fotomag-izhevsk.dynv6.net:8443/#send-files')" in js:
+        errors.append('Dead-end navigation to the LAN-only upload host is forbidden')
+    if "window.open('https://fotomag-izhevsk.dynv6.net:8443/#send-files', '_blank', 'noopener,noreferrer')" not in js:
+        errors.append('Public homepage must preserve its tab when opening AGFA upload')
+
 if errors:
     print('BLOCKED FotoMag Smartphone release:\n'+'\n'.join(' - '+e for e in errors))
     sys.exit(1)
