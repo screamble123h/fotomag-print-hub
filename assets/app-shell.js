@@ -166,7 +166,15 @@ function showHome() {
 closeView({ resetHash: true });
 scroll.scrollTo({ top: 0, behavior: 'smooth' });
 }
+function openUploadOnLocalFotoMag(section) {
+if (section === 'upload' && location.hostname === 'screamble123h.github.io') {
+location.assign('https://fotomag-izhevsk.dynv6.net:8443/#send-files');
+return true;
+}
+return false;
+}
 function navigate(section, orderFormat, uploadKind) {
+if (openUploadOnLocalFotoMag(section)) return;
 if (section === 'home') return showHome();
 if (sections[section]) {
 clearTimeout(openTimer);
@@ -258,13 +266,15 @@ try {history.replaceState({view:'home'},'',location.pathname+location.search);}c
 });
 window.addEventListener('popstate', () => {
 const section = hashRoutes[location.hash];
-if (section) openView(section, { setHash: false });
-else closeView();
+if (section && !openUploadOnLocalFotoMag(section)) openView(section, { setHash: false });
+else if (!section) closeView();
 });
 window.addEventListener('hashchange', () => {
 const section = hashRoutes[location.hash];
-if (section && section !== active) openView(section, { setHash: false });
+if (section && section !== active && !openUploadOnLocalFotoMag(section)) openView(section, { setHash: false });
 });
+if (!openUploadOnLocalFotoMag(hashRoutes[location.hash])) {
 if (hashRoutes[location.hash]) openView(hashRoutes[location.hash], { setHash: false });
 else selectedDock('home');
+}
 })();
