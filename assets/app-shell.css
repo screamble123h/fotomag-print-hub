@@ -207,3 +207,5 @@ button, a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .wifi-instructions{font-size:12px;line-height:1.5;margin:0;color:#4c4639}
 .wifi-instructions strong{color:#151515}
 @media(max-width:335px){.head-tools{gap:3px}.wifi-quick{font-size:10px;min-height:28px;padding:4px 7px}.wifi-quick svg{width:15px;height:15px}.wifi-panel{padding:14px 12px 18px}.wifi-qr{width:min(204px,100%)}.wifi-cred strong{font-size:17px}}
+
+.wifi-copy[href]{display:block;text-align:center;text-decoration:none;line-height:22px}
