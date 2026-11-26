@@ -98,7 +98,8 @@ def check_upload_ui(page, url):
     page.locator("#direct-upload-primary").click()
     expect(page.locator("#sheet-title")).to_have_text("Отправить файлы")
     expect(page.locator("#upload-submit")).to_be_disabled()
-    expect(page.locator("#upload-availability")).to_contain_text("готовится к запуску")
+    expect(page.locator("#upload-availability")).to_contain_text("Отправить через AGFA")
+    expect(page.locator("#lan-upload-link")).to_have_attribute("href", "https://lan.fotomag-izhevsk.dynv6.net/#send-files")
     assert page.evaluate("Boolean(window.FotoMagDirectUpload)") is True
     expect(page.locator("#upload-files")).to_have_attribute("multiple", "")
     expect(page.locator(".upload-heading")).to_have_text("Отправить файлы на печать")
