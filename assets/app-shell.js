@@ -181,6 +181,25 @@
       navigate(trigger.dataset.action, orderFormat, trigger.dataset.uploadKind);
       return;
     }
+    const wifiConnect = event.target.closest('#wifi-connect');
+    if (wifiConnect && wifiConnect.closest('#sheet-body')) {
+      const password = wifiConnect.dataset.wifiPassword || '';
+      const hint = sheetBody.querySelector('#wifi-connect-help');
+      if (!password || !hint) return;
+      const copied = () => {
+        wifiConnect.textContent = 'Пароль готов ✓';
+        hint.textContent = 'Пароль скопирован. Откройте Настройки → Wi-Fi → AGFA, вставьте пароль и подтвердите подключение.';
+        announce('Пароль скопирован. Выберите AGFA.');
+      };
+      const manual = () => {
+        hint.textContent = 'Откройте Настройки → Wi-Fi → AGFA. Пароль показан выше, его можно скопировать отдельно.';
+        announce('Выберите сеть AGFA в настройках телефона');
+      };
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(password).then(copied).catch(manual);
+      } else manual();
+      return;
+    }
     const wifiCopy = event.target.closest('#wifi-copy');
     if (wifiCopy && wifiCopy.closest('#sheet-body')) {
       const password = wifiCopy.dataset.wifiPassword || '';
