@@ -192,23 +192,22 @@ return;
 }
 const wifiConnect = event.target.closest('#wifi-connect');
 if (wifiConnect && wifiConnect.closest('#sheet-body')) {
-const password = wifiConnect.dataset.wifiPassword || '';
-const hint = sheetBody.querySelector('#wifi-connect-help');
-if (!password || !hint) return;
-const done = () => {
-hint.hidden = false;
-hint.textContent = 'Телефон не может подключиться к сети автоматически через браузер. Пароль подготовлен: откройте настройки Wi-Fi, выберите AGFA и вставьте его.';
-announce('Пароль готов для сети AGFA');
-};
-const manual = () => {
-hint.hidden = false;
-hint.textContent = 'Для подключения откройте настройки Wi-Fi телефона и выберите AGFA. Браузер не может переключить сеть сам.';
-announce('Откройте настройки Wi-Fi');
-};
-if (navigator.clipboard?.writeText) {
-navigator.clipboard.writeText(password).then(done).catch(manual);
-} else manual();
-return;
+  const hint = sheetBody.querySelector('#wifi-connect-help');
+  if (!hint) return;
+  hint.hidden = false;
+  if (/Android/i.test(navigator.userAgent)) {
+    hint.textContent = 'Открываем настройки Wi-Fi. Выберите AGFA и подтвердите подключение. Сайт не может подключить телефон автоматически.';
+    const link = wifiConnect.dataset.settingsLink || '';
+    if (link === 'intent:#Intent;action=android.settings.WIFI_SETTINGS;end') {
+      try { window.location.assign(link); }
+      catch (_) { hint.textContent = 'Браузер не открыл настройки. Откройте Wi-Fi телефона и выберите AGFA.'; }
+    }
+  } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    hint.textContent = 'iPhone не поддерживает подключение к Wi-Fi по ссылке с сайта. Откройте Настройки → Wi-Fi и выберите AGFA.';
+  } else {
+    hint.textContent = 'Откройте настройки Wi-Fi устройства и выберите AGFA. Автоматическое подключение из браузера недоступно.';
+  }
+  return;
 }
 const format=event.target.closest('[data-format]');
 if(format && format.closest('#sheet-body') && formatOptions[format.dataset.format]){
