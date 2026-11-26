@@ -41,7 +41,7 @@
     button.disabled = true;
     note.textContent = endpoint
       ? "Проверяем защищённое соединение с FotoMag…"
-      : "Прямая отправка готовится к запуску. Пока воспользуйтесь VK, MAX или Telegram ниже.";
+      : "Прямая отправка работает при подключении к Wi-Fi AGFA в фотоцентре. Проверьте связь с приёмником.";
     updateFiles();
     updateKindChoices();
     if (endpoint) void checkReadiness(generation);
@@ -66,7 +66,7 @@
       button.disabled = !gatewayReady;
       note.textContent = gatewayReady
         ? "Защищённый приём FotoMag работает. Файлы отправятся напрямую и будут проверены перед получением на ПК."
-        : "Прямая отправка временно недоступна. Выберите резервный канал ниже.";
+        : "Приём пока закрыт. Убедитесь, что вы в сети AGFA, затем проверьте соединение с FotoMag.";
     } catch (_) {
       if (generation === readinessGeneration) {
         gatewayReady = false;
