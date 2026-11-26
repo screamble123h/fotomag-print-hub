@@ -195,22 +195,15 @@ if (wifiConnect && wifiConnect.closest('#sheet-body')) {
   const hint = sheetBody.querySelector('#wifi-connect-help');
   if (!hint) return;
   hint.hidden = false;
-  const ua = navigator.userAgent || '';
-  if (/Android/i.test(ua)) {
-    hint.textContent = 'Для AGFA не нужен ручной ввод пароля. Подтвердите сеть в приложении FotoMag. Если приложение ещё не установлено, откроется страница тестовой версии.';
-    const download = 'https://github.com/screamble123h/fotomag-print-hub/releases/tag/fotomag-agfa-pilot-20261126';
-    const intent = 'intent://connect/#Intent;scheme=fotomagwifi;package=ru.fotomag.wificonnect;S.browser_fallback_url=' + encodeURIComponent(download) + ';end';
-    if (ua.includes("Chrome/") && !/YaBrowser|SamsungBrowser|OPR/.test(ua)) {
-      window.location.assign(intent);
-    } else {
-      hint.textContent = 'Откройте этот сайт в Chrome для запуска приложения FotoMag Wi-Fi. Приложение настроит AGFA после подтверждения Android.';
-      window.open(download, '_blank', 'noopener,noreferrer');
-    }
-  } else if (/iPhone|iPad|iPod/i.test(ua)) {
-    hint.textContent = 'Для iPhone загрузится профиль AGFA. После загрузки откройте Настройки → Профиль загружен → Установить.';
-    window.location.assign('https://screamble123h.github.io/fotomag-print-hub/wifi/ios/FotoMag_AGFA.mobileconfig');
+  const explain = 'Автоподключение одной ссылкой браузером не поддерживается. Отсканируйте QR-код камерой другого телефона и подтвердите AGFA. После сохранения сети телефон сможет подключаться к ней автоматически.';
+  const pass = '00001111';
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(pass).then(() => {
+      hint.textContent = 'Пароль AGFA подготовлен. Откройте Wi-Fi телефона, выберите AGFA и вставьте пароль. Можно также подключиться по QR-коду выше.';
+      announce('Пароль AGFA скопирован');
+    }).catch(() => { hint.textContent = explain; });
   } else {
-    hint.textContent = 'Для Android используйте Chrome и приложение FotoMag Wi-Fi. Для iPhone — профиль Wi-Fi из Safari. Подключение всегда подтверждает телефон.';
+    hint.textContent = explain;
   }
   return;
 }
