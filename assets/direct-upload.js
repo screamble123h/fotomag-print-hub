@@ -273,6 +273,18 @@
   }
 
   document.addEventListener("click", event => {
+    const health = event.target.closest("#upload-recheck");
+    if (health && health.closest("#sheet-body")) {
+      const url = health.dataset.healthUrl || "";
+      try {
+        const dest = new URL(url);
+        if (dest.protocol !== "https:" || dest.hostname !== "fotomag-izhevsk.dynv6.net" ||
+            dest.port !== "8443" || dest.pathname !== "/api/health") throw new Error("Invalid health target");
+        window.open(dest.href, "_blank", "noopener,noreferrer");
+        status("Открывается проверка сервера. JSON со статусом ok означает наличие связи, но не разрешение отправки.");
+      } catch (_) { status("Не удалось открыть проверку связи.", true); }
+      return;
+    }
     const choice = event.target.closest("#direct-upload-form [data-upload-choice]");
     if (!choice) return;
     const kind = choice.dataset.uploadChoice;
