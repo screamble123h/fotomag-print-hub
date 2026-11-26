@@ -200,7 +200,7 @@ if (wifiConnect && wifiConnect.closest('#sheet-body')) {
     hint.textContent = 'Для AGFA не нужен ручной ввод пароля. Подтвердите сеть в приложении FotoMag. Если приложение ещё не установлено, откроется страница тестовой версии.';
     const download = 'https://github.com/screamble123h/fotomag-print-hub/releases/tag/fotomag-agfa-pilot-20261126';
     const intent = 'intent://connect/#Intent;scheme=fotomagwifi;package=ru.fotomag.wificonnect;S.browser_fallback_url=' + encodeURIComponent(download) + ';end';
-    if (/Chrome\\//i.test(ua) && !/YaBrowser|SamsungBrowser|OPR\\//i.test(ua)) {
+    if (ua.includes("Chrome/") && !/YaBrowser|SamsungBrowser|OPR/.test(ua)) {
       window.location.assign(intent);
     } else {
       hint.textContent = 'Откройте этот сайт в Chrome для запуска приложения FotoMag Wi-Fi. Приложение настроит AGFA после подтверждения Android.';
