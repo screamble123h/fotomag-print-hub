@@ -186,31 +186,19 @@ if (wifiConnect && wifiConnect.closest('#sheet-body')) {
 const password = wifiConnect.dataset.wifiPassword || '';
 const hint = sheetBody.querySelector('#wifi-connect-help');
 if (!password || !hint) return;
-const copied = () => {
-wifiConnect.textContent = 'Пароль готов ✓';
-hint.textContent = 'Пароль скопирован. Откройте Настройки → Wi-Fi → AGFA, вставьте пароль и подтвердите подключение.';
-announce('Пароль скопирован. Выберите AGFA.');
+const done = () => {
+hint.hidden = false;
+hint.textContent = 'Телефон не может подключиться к сети автоматически через браузер. Пароль подготовлен: откройте настройки Wi-Fi, выберите AGFA и вставьте его.';
+announce('Пароль готов для сети AGFA');
 };
 const manual = () => {
-hint.textContent = 'Откройте Настройки → Wi-Fi → AGFA. Пароль показан выше, его можно скопировать отдельно.';
-announce('Выберите сеть AGFA в настройках телефона');
+hint.hidden = false;
+hint.textContent = 'Для подключения откройте настройки Wi-Fi телефона и выберите AGFA. Браузер не может переключить сеть сам.';
+announce('Откройте настройки Wi-Fi');
 };
 if (navigator.clipboard?.writeText) {
-navigator.clipboard.writeText(password).then(copied).catch(manual);
+navigator.clipboard.writeText(password).then(done).catch(manual);
 } else manual();
-return;
-}
-const wifiCopy = event.target.closest('#wifi-copy');
-if (wifiCopy && wifiCopy.closest('#sheet-body')) {
-const password = wifiCopy.dataset.wifiPassword || '';
-if (!password) return;
-const done = () => {
-wifiCopy.textContent = 'Пароль скопирован ✓';
-announce('Пароль Wi‑Fi скопирован');
-};
-if (navigator.clipboard?.writeText) {
-navigator.clipboard.writeText(password).then(done).catch(() => announce('Пароль указан в карточке выше'));
-} else announce('Пароль указан в карточке выше');
 return;
 }
 const format=event.target.closest('[data-format]');
