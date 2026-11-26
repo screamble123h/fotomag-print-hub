@@ -202,8 +202,12 @@ button, a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .wifi-cred{border:1px solid #e4dbc1;border-radius:13px;background:#fbfaf5;padding:10px 12px;min-width:0}
 .wifi-cred span{display:block;color:#615a4e;font-size:10px;font-weight:700;margin-bottom:3px}
 .wifi-cred strong{display:block;color:#151515;letter-spacing:.04em;font-size:19px;line-height:1.25;overflow-wrap:anywhere}
-.wifi-copy{width:100%;padding:13px 18px;min-height:48px;border:0;border-radius:13px;background:#ffd43e;color:#171717;font-size:14px;font-weight:900}
-.wifi-copy:hover{background:#ffe57f}
+.wifi-actions{display:grid;gap:8px}
+.wifi-connect{width:100%;padding:13px 18px;min-height:48px;border:0;border-radius:13px;background:#ffd43e;color:#171717;font-size:15px;font-weight:900;box-shadow:0 2px 0 #ba930d}
+.wifi-connect:hover{background:#ffe57f}
+.wifi-copy{width:100%;padding:11px 18px;min-height:44px;border:1px solid #d3c9a9;border-radius:13px;background:#fff;color:#302919;font-size:13px;font-weight:800}
+.wifi-copy:hover{background:#fff8dc}
+.wifi-connect-help{margin:0;padding:10px 12px;border-radius:12px;background:#fff8dc;color:#393120;font-size:12px;line-height:1.5}
 .wifi-instructions{font-size:12px;line-height:1.5;margin:0;color:#4c4639}
 .wifi-instructions strong{color:#151515}
 @media(max-width:335px){.head-tools{gap:3px}.wifi-quick{font-size:10px;min-height:28px;padding:4px 7px}.wifi-quick svg{width:15px;height:15px}.wifi-panel{padding:14px 12px 18px}.wifi-qr{width:min(204px,100%)}.wifi-cred strong{font-size:17px}}
