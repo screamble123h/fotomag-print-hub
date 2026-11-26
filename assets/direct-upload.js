@@ -277,7 +277,8 @@
     if (health && health.closest("#sheet-body")) {
       try {
         const dest = new URL(health.dataset.formUrl || "");
-        if (dest.href !== "https://fotomag-izhevsk.dynv6.net:8443/#send-files")
+        if (dest.protocol !== "https:" || dest.hostname !== "fotomag-izhevsk.dynv6.net" ||
+            dest.port !== "8443" || dest.pathname !== "/" || dest.hash !== "#send-files" || dest.search)
           throw new Error("Unexpected upload destination");
         window.open(dest.href, "_blank", "noopener,noreferrer");
         status("Форма FotoMag открывается в новой вкладке. Для её работы нужна сеть AGFA.");
