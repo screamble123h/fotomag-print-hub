@@ -195,17 +195,22 @@ if (wifiConnect && wifiConnect.closest('#sheet-body')) {
   const hint = sheetBody.querySelector('#wifi-connect-help');
   if (!hint) return;
   hint.hidden = false;
-  if (/Android/i.test(navigator.userAgent)) {
-    hint.textContent = 'Открываем настройки Wi-Fi. Выберите AGFA и подтвердите подключение. Сайт не может подключить телефон автоматически.';
-    const link = wifiConnect.dataset.settingsLink || '';
-    if (link === 'intent:#Intent;action=android.settings.WIFI_SETTINGS;end') {
-      try { window.location.assign(link); }
-      catch (_) { hint.textContent = 'Браузер не открыл настройки. Откройте Wi-Fi телефона и выберите AGFA.'; }
+  const ua = navigator.userAgent || '';
+  if (/Android/i.test(ua)) {
+    hint.textContent = 'Для AGFA не нужен ручной ввод пароля. Подтвердите сеть в приложении FotoMag. Если приложение ещё не установлено, откроется страница тестовой версии.';
+    const download = 'https://github.com/screamble123h/fotomag-print-hub/releases/tag/fotomag-agfa-pilot-20261126';
+    const intent = 'intent://connect/#Intent;scheme=fotomagwifi;package=ru.fotomag.wificonnect;S.browser_fallback_url=' + encodeURIComponent(download) + ';end';
+    if (ua.includes("Chrome/") && !/YaBrowser|SamsungBrowser|OPR/.test(ua)) {
+      window.location.assign(intent);
+    } else {
+      hint.textContent = 'Откройте этот сайт в Chrome для запуска приложения FotoMag Wi-Fi. Приложение настроит AGFA после подтверждения Android.';
+      window.open(download, '_blank', 'noopener,noreferrer');
     }
-  } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    hint.textContent = 'iPhone не поддерживает подключение к Wi-Fi по ссылке с сайта. Откройте Настройки → Wi-Fi и выберите AGFA.';
+  } else if (/iPhone|iPad|iPod/i.test(ua)) {
+    hint.textContent = 'Для iPhone загрузится профиль AGFA. После загрузки откройте Настройки → Профиль загружен → Установить.';
+    window.location.assign('https://screamble123h.github.io/fotomag-print-hub/wifi/ios/FotoMag_AGFA.mobileconfig');
   } else {
-    hint.textContent = 'Откройте настройки Wi-Fi устройства и выберите AGFA. Автоматическое подключение из браузера недоступно.';
+    hint.textContent = 'Для Android используйте Chrome и приложение FotoMag Wi-Fi. Для iPhone — профиль Wi-Fi из Safari. Подключение всегда подтверждает телефон.';
   }
   return;
 }
