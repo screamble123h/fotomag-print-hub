@@ -18,7 +18,7 @@ html=HTML.read_text(encoding='utf-8')
 css=CSS.read_text(encoding='utf-8')
 js=JS.read_text(encoding='utf-8')
 upload_js=UPLOAD_JS.read_text(encoding='utf-8')
-allowed_hosts={'vk.com','t.me','max.ru','yandex.com','kantstovary-dlja-shkoly-i.clients.site'}
+allowed_hosts={'vk.com','t.me','max.ru','yandex.com','kantstovary-dlja-shkoly-i.clients.site','lan.fotomag-izhevsk.dynv6.net'}
 store_2gis='https://2gis.ru/izhevsk/firm/70000001061965152'
 required_links={
  'bot-vk':'https://vk.com/write-20848548',
@@ -84,6 +84,10 @@ for name in ('photos','id450','documents','upload','studio','shop','personal','b
 for key,url in required_links.items():
     links=[x['href'] for x in a.links if x.get('id')==key]
     if not links or any(h!=url for h in links):errors.append('Critical link mismatch: '+key)
+for link_id in ('lan-upload-link','wifi-send-link'):
+    urls=[x.get('href') for x in a.links if x.get('id')==link_id]
+    if urls!=['https://lan.fotomag-izhevsk.dynv6.net/#send-files']:
+        errors.append('FotoMag LAN-only direct upload link mismatch: '+link_id)
 # Check the HTML also preserves service discovery routes in its nonexecutable templates.
 for s in ('Фото на документы','450 ₽','35 ₽','55 ₽','750 ₽','850 ₽','35×45','8 шт.','3×4','6 шт.','4×6','4 шт.','любом фоне','Белый фон','Ровные плечи','В разработке','Не показываем неподтверждённые'):
     if s not in html:errors.append('Expected service text missing: '+s)
