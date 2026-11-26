@@ -103,7 +103,7 @@ def check_upload_ui(page, url):
     # Never treat either as successful upload admission.
     note = page.locator("#upload-availability").inner_text()
     assert any(part in note for part in
-        ("готовится к запуску", "Проверяем защищённое соединение", "Нет связи с приёмником", "Приём пока закрыт")), note
+        ("готовится к запуску", "Прямая отправка работает при подключении", "Проверяем защищённое соединение", "Нет связи с приёмником", "Приём пока закрыт")), note
     assert page.evaluate("Boolean(window.FotoMagDirectUpload)") is True
     expect(page.locator("#upload-files")).to_have_attribute("multiple", "")
     expect(page.locator(".upload-heading")).to_have_text("Отправить файлы на печать")
