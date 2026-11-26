@@ -275,14 +275,13 @@
   document.addEventListener("click", event => {
     const health = event.target.closest("#upload-recheck");
     if (health && health.closest("#sheet-body")) {
-      const url = health.dataset.healthUrl || "";
       try {
-        const dest = new URL(url);
-        if (dest.protocol !== "https:" || dest.hostname !== "fotomag-izhevsk.dynv6.net" ||
-            dest.port !== "8443" || dest.pathname !== "/api/health") throw new Error("Invalid health target");
+        const dest = new URL(health.dataset.formUrl || "");
+        if (dest.href !== "https://fotomag-izhevsk.dynv6.net:8443/#send-files")
+          throw new Error("Unexpected upload destination");
         window.open(dest.href, "_blank", "noopener,noreferrer");
-        status("Открывается проверка сервера. JSON со статусом ok означает наличие связи, но не разрешение отправки.");
-      } catch (_) { status("Не удалось открыть проверку связи.", true); }
+        status("Форма FotoMag открывается в новой вкладке. Для её работы нужна сеть AGFA.");
+      } catch (_) { status("Не удалось открыть форму FotoMag.", true); }
       return;
     }
     const choice = event.target.closest("#direct-upload-form [data-upload-choice]");
