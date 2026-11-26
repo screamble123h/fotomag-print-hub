@@ -185,3 +185,25 @@ button, a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 #upload-submit{background:#141414;color:#fed33c;border:0;min-height:55px;border-radius:11px;font-weight:900;font-size:16px}
 #upload-submit:disabled{background:#2c2a25;color:#e0c478;opacity:.74}
 @media(max-width:340px){.upload-service-choice{font-size:10px;padding:6px 1px}.upload-heading{font-size:21px}.direct-upload-form>label.upload-picker{min-height:118px}}
+
+
+/* FotoMag free guest Wi-Fi: small high-contrast control in the approved header. */
+.phone-head{gap:10px}
+.head-tools{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:5px;min-width:0;flex:none}
+.wifi-quick{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:31px;padding:5px 10px;border:1px solid #ffda52;border-radius:999px;background:#ffd43e;color:#151515;box-shadow:0 2px 0 #ba930d;font-weight:900;font-size:11px;line-height:1.15;white-space:nowrap}
+.wifi-quick svg{width:17px;height:17px;flex:none}
+.wifi-quick:hover{background:#ffe57f;transform:translateY(-1px)}
+.wifi-panel{display:grid;gap:13px;padding:18px 18px 22px}
+.wifi-intro{font-size:13px;line-height:1.5;color:#4c4639;margin:0}
+.wifi-qr-card{display:grid;justify-items:center;gap:9px;background:#fff8dc;border:1px solid #eadc99;border-radius:20px;padding:14px 13px 12px}
+.wifi-qr{display:block;width:min(226px,100%);height:auto;aspect-ratio:1;background:#fff;border:9px solid #fff;border-radius:12px;image-rendering:pixelated}
+.wifi-qr-label{text-align:center;font-size:12px;line-height:1.45;font-weight:750;color:#393120;margin:0}
+.wifi-creds{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.wifi-cred{border:1px solid #e4dbc1;border-radius:13px;background:#fbfaf5;padding:10px 12px;min-width:0}
+.wifi-cred span{display:block;color:#615a4e;font-size:10px;font-weight:700;margin-bottom:3px}
+.wifi-cred strong{display:block;color:#151515;letter-spacing:.04em;font-size:19px;line-height:1.25;overflow-wrap:anywhere}
+.wifi-copy{width:100%;padding:13px 18px;min-height:48px;border:0;border-radius:13px;background:#ffd43e;color:#171717;font-size:14px;font-weight:900}
+.wifi-copy:hover{background:#ffe57f}
+.wifi-instructions{font-size:12px;line-height:1.5;margin:0;color:#4c4639}
+.wifi-instructions strong{color:#151515}
+@media(max-width:335px){.head-tools{gap:3px}.wifi-quick{font-size:10px;min-height:28px;padding:4px 7px}.wifi-quick svg{width:15px;height:15px}.wifi-panel{padding:14px 12px 18px}.wifi-qr{width:min(204px,100%)}.wifi-cred strong{font-size:17px}}

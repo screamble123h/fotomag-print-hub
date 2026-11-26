@@ -16,6 +16,7 @@
     id450: { title: 'Фото на документы', kicker: 'Ваше фото на любом фоне · 450 ₽', icon: 'id450', route: '#order450' },
     documents: { title: 'Документы и PDF', kicker: 'Печать с телефона', icon: 'documents', route: '#documents' },
     upload: { title: 'Отправить файлы', kicker: 'Без мессенджеров · прямо с телефона', icon: 'documents', route: '#send-files' },
+    wifi: { title: 'Бесплатный Wi‑Fi', kicker: 'Для гостей FotoMag', icon: 'wifi', route: '#wifi' },
     studio: { title: 'Фото на паспорт', kicker: 'Новая съёмка в FotoMag', icon: 'studio', route: '#id-photo' },
     shop: { title: 'Мини-магазин', kicker: 'Будущий раздел', icon: 'shop', route: '#shop' },
     personal: { title: 'Отправить лично', kicker: 'Без бота · напрямую', icon: 'personal', route: '#personal-contacts' },
@@ -28,7 +29,7 @@
     '#photo-print':'photos','#photos':'photos','#order450':'id450','#promo450':'id450',
     '#id-photo':'studio','#documents':'documents','#docs':'documents','#shop':'shop','#send-files':'upload',
     '#personal-contacts':'personal','#direct':'personal','#bots':'bots','#location':'location',
-    '#prices':'prices','#help':'help','#faq':'help'
+    '#prices':'prices','#help':'help','#faq':'help','#wifi':'wifi'
   });
   const get = id => document.getElementById(id);
   let active = 'home';
@@ -133,7 +134,8 @@
       initUploadView();
     }
     const sourceIcon = document.querySelector(`[data-action="${config.icon}"] .tile-icon svg`) ||
-      document.querySelector(`[data-action="${config.icon}"] .dock-icon svg`);
+      document.querySelector(`[data-action="${config.icon}"] .dock-icon svg`) ||
+      (section === 'wifi' ? document.querySelector('.wifi-quick svg') : null);
     sheetIcon.replaceChildren();
     if (sourceIcon) sheetIcon.appendChild(sourceIcon.cloneNode(true));
     else sheetIcon.textContent = section === 'location' ? '⌖' : section === 'help' ? '?' : '✦';
@@ -179,6 +181,19 @@
       navigate(trigger.dataset.action, orderFormat, trigger.dataset.uploadKind);
       return;
     }
+    const wifiCopy = event.target.closest('#wifi-copy');
+    if (wifiCopy && wifiCopy.closest('#sheet-body')) {
+      const password = wifiCopy.dataset.wifiPassword || '';
+      if (!password) return;
+      const done = () => {
+        wifiCopy.textContent = 'Пароль скопирован ✓';
+        announce('Пароль Wi‑Fi скопирован');
+      };
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(password).then(done).catch(() => announce('Пароль указан в карточке выше'));
+      } else announce('Пароль указан в карточке выше');
+      return;
+    }
     const format=event.target.closest('[data-format]');
     if(format && format.closest('#sheet-body') && formatOptions[format.dataset.format]){
       selectedFormat=format.dataset.format;
@@ -203,7 +218,7 @@
   });
   document.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
-      const btn = event.target.closest('button.app-tile,button.tip-banner,button.dock-btn,button.utility-action,button.sheet-main-cta,button.format-option,a.quick-bot');
+      const btn = event.target.closest('button.app-tile,button.tip-banner,button.dock-btn,button.utility-action,button.sheet-main-cta,button.format-option,button.wifi-quick,button.wifi-copy,a.quick-bot');
       if (btn) btn.classList.add('pressed');
     }
   });
@@ -213,7 +228,7 @@
     }
   });
   document.addEventListener('pointerdown', event => {
-    const btn = event.target.closest('button.app-tile,button.tip-banner,button.dock-btn,button.utility-action,button.sheet-main-cta,button.format-option,a.quick-bot');
+    const btn = event.target.closest('button.app-tile,button.tip-banner,button.dock-btn,button.utility-action,button.sheet-main-cta,button.format-option,button.wifi-quick,button.wifi-copy,a.quick-bot');
     if (btn) btn.classList.add('pressed');
   });
   const removePress = () => {
