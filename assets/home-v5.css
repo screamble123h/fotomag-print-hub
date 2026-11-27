@@ -1,0 +1,52 @@
+/* FotoMag V6: approved first design */
+.fm-head{display:block;min-height:0;padding:30px 15px 15px;background:#151515;color:#fff}
+.fm-brand-row{display:grid;grid-template-columns:140px minmax(0,1fr);align-items:center;gap:12px}
+.fm-head .brand-img{width:140px;max-width:100%;height:70px;object-fit:contain;object-position:left center}
+.fm-brand-motto{border-left:1px solid #c5ae4c;padding:4px 0 4px 12px;font-size:16px;line-height:1.22;font-weight:900}
+.fm-head-address{display:flex;align-items:center;gap:6px;color:white;border:0;background:transparent;padding:5px 0 0;margin:7px 0 0;font-size:13px;text-align:left;font-weight:850}
+.fm-head-address span{font-size:18px}
+.fm-head-hours{font-size:12px;line-height:1.4;color:#eee8d5;margin:2px 0 13px;font-weight:700}
+.fm-head-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fm-head .fm-call,.fm-head .fm-wifi{display:flex;justify-content:center;align-items:center;gap:6px;min-height:48px;min-width:0;padding:8px 6px;border-radius:12px;border:1px solid #d4aa34;font-size:13px;line-height:1.2;font-weight:900;text-align:center}
+.fm-head .fm-call{background:#ffda44;color:#171717;box-shadow:0 3px 0 #a48a34}
+.fm-head .fm-wifi{background:#292824;color:#fff;box-shadow:0 3px 0 #060606}
+.fm-head .fm-call span{font-size:20px}
+.fm-head .fm-wifi svg{width:21px;height:21px;flex:0 0 21px;color:#ffdd45}
+.fm-head .fm-call:active,.fm-head .fm-wifi:active{transform:translateY(3px);box-shadow:none}
+.fm-home{padding-top:14px}
+.fm-home>h1{font-size:clamp(24px,6.6vw,30px);line-height:1.16;letter-spacing:-.04em;font-weight:950;text-align:center;margin:4px 0 15px}
+.fm-bot-panel{background:#22211f;color:#fff;border:1px solid #35322b;border-radius:18px;padding:10px;margin:0 0 14px;box-shadow:0 5px 0 #b89b32}
+.fm-bot-panel #bot-primary-cta{background:transparent;border:0;box-shadow:none;width:100%;min-height:58px;padding:9px 6px;margin:0 0 8px;border-radius:11px}
+.fm-bot-panel #bot-primary-cta:hover{background:#3a3833}
+.fm-bot-panel #bot-primary-cta h3{font-size:19px;line-height:1.2}
+.fm-bot-panel #bot-primary-cta p{font-size:12px}
+.fm-bot-panel .quick-bots{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0}
+.fm-bot-panel .quick-bot{flex-direction:column;min-width:0;gap:4px;padding:7px 2px;min-height:59px;font-size:12px;line-height:1.12;border-radius:11px}
+.fm-bot-panel .quick-bot b{display:grid;place-items:center;min-width:31px;min-height:23px;font-size:12px}
+.social-contact{margin:0 0 23px;padding:11px 10px 12px;background:linear-gradient(135deg,#fff0aa,#ffda45);border-color:#dec056;box-shadow:0 5px 0 #baa042}
+.social-contact__title{font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;margin:0 0 8px;color:#514122}
+#quick-personal.fm-direct-trigger{display:flex;grid-column:auto;align-items:center;gap:10px;width:100%;height:auto;min-height:62px;padding:9px;background:#fff;color:#171717;text-align:left;border:1px solid #d9be5a;border-radius:13px;box-shadow:0 3px 0 #b89b42}
+.fm-direct-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;background:#151515;color:#ffdb46;border-radius:10px;font-size:24px}
+.fm-direct-caption{flex:1;min-width:0;display:flex;flex-direction:column}
+.fm-direct-caption strong{font-size:17px;font-weight:950;line-height:1.15}
+.fm-direct-caption small{font-size:11px;margin-top:4px}
+.fm-direct-arrow{font-size:22px}
+.social-contact__grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}
+.social-contact__button{min-height:76px;font-size:11.5px;padding:7px 2px;gap:6px}
+.social-contact__button--mail{background:linear-gradient(140deg,#f04440,#c91c27);color:#fff;box-shadow:0 4px 0 #98141f,0 7px 12px #0002}
+.social-contact__button--mail .social-contact__mark{background:#fff;color:#d51c2d;box-shadow:none;font-size:19px}
+.social-contact__note{font-size:11px;line-height:1.5;color:#514324;margin:11px 0 0}
+.fm-home .section-bar h2{font-size:21px}
+.fm-home .app-grid{gap:12px}
+.fm-home .app-tile:not(#quick-id-photo){height:148px}
+.fm-home .tile-title{font-size:15px;line-height:1.2}
+.fm-home .tile-subtitle{font-size:12px;line-height:1.35}
+.fm-home #quick-id-photo .tile-title{font-size:19px}
+.fm-home .fm-souvenirs{background:#fff0ab;border-color:#ddbf53;box-shadow:0 7px 0 #c1a53d,0 12px 17px #0001}
+.fm-home .fm-souvenirs .tile-icon{background:#fff8d8;font-size:24px}
+.fm-home #direct-upload-primary{width:100%;margin:23px 0 12px}
+.fm-home .hint{font-size:12px;line-height:1.55}
+#direct-email .choice-emoji{background:#df2e2d;color:white}
+.wifi-same-phone{font-size:13px;line-height:1.5;color:#514b3e;margin:9px 0}
+@media(max-width:360px){.fm-head{padding-left:11px;padding-right:11px}.fm-brand-row{grid-template-columns:122px minmax(0,1fr);gap:8px}.fm-head .brand-img{width:122px;height:64px}.fm-brand-motto{font-size:14px;padding-left:8px}.fm-head .fm-call,.fm-head .fm-wifi{font-size:12px;gap:4px}.fm-head .fm-wifi svg{width:18px;height:18px;flex-basis:18px}.fm-bot-panel .quick-bots{gap:5px}.social-contact__grid{gap:4px}.social-contact__button{font-size:10.5px}.fm-direct-caption strong{font-size:16px}.fm-home .app-tile:not(#quick-id-photo){height:153px}}
+@media(max-width:310px){.fm-brand-row{grid-template-columns:103px minmax(0,1fr)}.fm-head .brand-img{width:103px}.fm-brand-motto{font-size:12px}.social-contact__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

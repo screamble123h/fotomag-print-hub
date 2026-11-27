@@ -175,6 +175,7 @@ announce('Отправка доступна внутри Wi-Fi AGFA. Основ�
 return true;
 }
 function navigate(section, orderFormat, uploadKind) {
+if (section === 'souvenirs') { window.location.assign('souvenirs.html'); return; }
 if (openUploadOnLocalFotoMag(section, true)) return;
 if (section === 'home') return showHome();
 if (sections[section]) {
