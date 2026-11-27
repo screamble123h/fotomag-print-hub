@@ -34,7 +34,7 @@ def main():
             assert page.locator("header .fm-wifi").is_visible()
             expect(page.locator(".social-contact__button--mail")).to_contain_text("Почта")
             page.locator("header .fm-wifi").click()
-            expect(page.locator("#sheet-title")).to_have_text("Бесплатный Wi-Fi")
+            expect(page.locator("#sheet-title")).to_have_text("Бесплатный Wi‑Fi")
             expect(page.locator(".wifi-creds")).to_contain_text("AGFA")
             expect(page.locator(".wifi-qr")).to_have_attribute("src","assets/wifi-agfa.svg")
             expect(page.locator("#wifi-connect")).to_have_text("Скопировать пароль")
