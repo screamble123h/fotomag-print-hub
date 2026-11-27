@@ -37,6 +37,8 @@ p=Inspector();p.feed(html)
 errors=list(p.errors)
 if p.values!=expected:errors.append("Catalog is not the 28 approved photo-souvenir subcategories in order")
 if len(p.ids)!=len(set(p.ids)):errors.append("Duplicate element ids")
+if html.count('class="gift-group"')!=4 or any(f'id="gift-group-{n}" open' in html for n in range(1,5)):
+    errors.append("All souvenir categories must be initially collapsed")
 for id in ("gift-chosen","gift-note","gift-request-text","gift-copy","gift-email"):
     if id not in p.ids:errors.append("Missing interactive element "+id)
 if "Пледы с фото" in html:errors.append("Unapproved category")
