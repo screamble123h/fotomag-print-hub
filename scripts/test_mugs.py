@@ -18,7 +18,7 @@ def site():
   finally:srv.shutdown();th.join()
 def main():
  with site() as url,sync_playwright() as p:
-  browser=p.chromium.launch()
+  browser=p.chromium.launch(executable_path=__import__('shutil').which('google-chrome') or __import__('shutil').which('chromium'))
   for width in (320,393,428,1280):
    context=browser.new_context(viewport={"width":width,"height":860},permissions=["clipboard-read","clipboard-write"])
    page=context.new_page()
