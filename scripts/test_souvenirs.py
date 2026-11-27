@@ -45,6 +45,10 @@ def main():
             expect(page).to_have_url(re.compile(r"/souvenirs.html$"))
             expect(page.locator('input[name="gift"]')).to_have_count(28)
             expect(page.locator("h1")).to_have_text("Фотосувениры")
+            for group in page.locator("details.gift-group").all():
+                expect(group).not_to_have_attribute("open", "")
+            page.locator("#gift-group-1 summary").click()
+            page.locator("#gift-group-3 summary").click()
             page.locator('input[value="Футболки с фото"]').check()
             page.locator('input[value="Фотокристаллы"]').check()
             expect(page.locator("#gift-chosen")).to_contain_text("Выбрано: 2")
