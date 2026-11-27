@@ -23,6 +23,8 @@ jobs:
         run: python3 scripts/verify_public_site.py
       - name: Validate approved souvenir catalog and links
         run: python3 scripts/verify_souvenirs.py
+      - name: Verify full mug catalog, images and customer links
+        run: python3 scripts/verify_mugs.py
       - name: Enforce lightweight mobile page budget
         run: python3 scripts/verify_performance_budget.py
       - name: Test smartphone navigation and disabled upload in Chrome
@@ -31,3 +33,4 @@ jobs:
           "$RUNNER_TEMP/fotomag-browser/bin/pip" install playwright==1.62.0
           "$RUNNER_TEMP/fotomag-browser/bin/python" scripts/test_personal_contacts.py
           "$RUNNER_TEMP/fotomag-browser/bin/python" scripts/test_souvenirs.py
+          "$RUNNER_TEMP/fotomag-browser/bin/python" scripts/test_mugs.py
