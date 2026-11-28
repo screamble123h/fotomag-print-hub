@@ -159,6 +159,66 @@ def wait_for_upload(page):
     assert page.evaluate("() => Boolean(window.FotoMagDirectUpload)"), "Upload handler did not initialize"
 
 
+def check_reload_context(page, url):
+    # The user's latest choice supersedes the format in the original entry URL.
+    page.goto(url + "?format=35x45#order450")
+    select_format(page, "4x6")
+    page.reload()
+    expect(page.locator('[data-format="4x6"]')).to_have_attribute("aria-pressed", "true")
+    expect(page.locator("#id-format-summary")).to_contain_text("4×6 см — 4 фото")
+    page.locator("#id450-personal").click()
+    page.reload()
+    check_service_context(page, "4×6 см", 4, copy=False)
+    assert page.evaluate("window.__opened.length") == 0
+    # History may retain a context marker, but its arbitrary labels are not used.
+    page.evaluate("""() => history.replaceState({...history.state,
+      orderFormat: {label:'НЕВЕРНЫЙ ФОРМАТ', count:999}}, '', location.href)""")
+    page.reload()
+    check_service_context(page, "4×6 см", 4, copy=False)
+    # An unrelated history entry cannot turn a plain contact link into an order.
+    page.evaluate("""() => history.replaceState({...history.state, view:'id450'}, '', location.href)""")
+    page.reload()
+    check_general(page)
+    page.goto(url + "?format=3x4#order450")
+    expect(page.locator('[data-format="3x4"]')).to_have_attribute("aria-pressed", "true")
+    page.goto(url + "?format=4x6#personal-contacts")
+    check_general(page)
+    page.reload()
+    check_general(page)
+
+    for tile, kind, selector in (
+        ("#quick-print-photo", "photos", ".upload-service-cta"),
+        ("#quick-documents", "documents", ".upload-service-cta"),
+        ("#quick-id-photo", "id450", "#id450-upload"),
+    ):
+        if page.goto(url) is None:
+            page.reload()
+        page.locator(tile).click()
+        if kind == "id450":
+            select_format(page, "4x6")
+        page.locator(selector).click()
+        wait_for_upload(page)
+        page.reload()
+        wait_for_upload(page)
+        expect(page.locator("#upload-kind")).to_have_value(kind)
+        if kind == "id450":
+            expect(page.locator("#upload-format")).to_have_value("4x6")
+            expect(page.locator("#upload-comment")).to_have_value("Фото на документы 4×6 см, 4 шт. — 450 ₽")
+        assert page.evaluate("window.__opened.length") == 0, "Reload opened an unrequested receiver tab"
+
+    page.goto(url + "?kind=documents&format=35x45#send-files")
+    wait_for_upload(page)
+    page.locator('[data-upload-choice="id450"]').click()
+    expect(page.locator("#upload-format-field")).to_be_visible()
+    page.locator("#upload-format").select_option("3x4")
+    page.reload()
+    wait_for_upload(page)
+    expect(page.locator("#upload-kind")).to_have_value("id450")
+    expect(page.locator("#upload-format")).to_have_value("3x4")
+    expect(page.locator("#upload-comment")).to_have_value("Фото на документы 3×4 см, 6 шт. — 450 ₽")
+    assert page.evaluate("window.__opened.length") == 0
+
+
 def check_upload_ui(page, url):
     """Retain the disabled-upload, lazy loading and filename safety gate."""
     page.goto(url)
@@ -375,6 +435,12 @@ def check_public_handoff(browser):
         page.go_forward()
         expect(page.locator("#sheet-title")).to_have_text("Отправить файлы")
         assert page.evaluate("window.__opened.length") == 1
+        page.reload()
+        wait_for_upload(page)
+        expect(page.locator("#upload-kind")).to_have_value(kind)
+        if key:
+            expect(page.locator("#upload-format")).to_have_value(key)
+        assert page.evaluate("window.__opened.length") == 0, "Reload opened an unrequested receiver tab"
 
     response = page.goto(PUBLIC_URL)
     if response is None:
@@ -433,6 +499,7 @@ def main():
             check_service_entries(page)
             check_general_entries(page, url)
             check_history(page, url)
+            check_reload_context(page, url)
             print(f"PASS {width}px: three formats, prepared text/email/clipboard, neutral entry, keyboard and history", flush=True)
             check_upload_ui(page, url)
             check_draft_lifetime(page, url)

@@ -4,6 +4,8 @@
   const LIMIT_FILE = 25 * 1024 * 1024, LIMIT_TOTAL = 100 * 1024 * 1024, LIMIT_COUNT = 10;
   const EXTENSIONS = new Set(['jpg','jpeg','png','webp','heic','heif','pdf','docx','xlsx']);
   const FIELD_IDS = ['kind','format','phone','name','comment','consent'];
+  const ID_FORMATS = Object.freeze({'35x45':'35×45 мм, 8 шт.', '3x4':'3×4 см, 6 шт.', '4x6':'4×6 см, 4 шт.'});
+  const idHeading = format => Object.hasOwn(ID_FORMATS, format) ? 'Фото на документы ' + ID_FORMATS[format] + ' — 450 ₽' : '';
   const get = id => document.getElementById(id);
   const humanSize = bytes => (bytes / (1024 * 1024)).toFixed(1).replace('.', ',') + ' МБ';
   let endpoint = '';
@@ -39,7 +41,7 @@
   function controls() {
     if (!state.view) return;
     const locked = state.sending || Boolean(state.accepted) || Boolean(state.pending?.submitStarted);
-    for (const el of document.querySelectorAll('#direct-upload-form input, #direct-upload-form textarea, #direct-upload-form [data-upload-choice]')) el.disabled = locked;
+    for (const el of document.querySelectorAll('#direct-upload-form input, #direct-upload-form select, #direct-upload-form textarea, #direct-upload-form [data-upload-choice]')) el.disabled = locked;
     const submit = get('upload-submit'), cancel = get('upload-cancel'), fresh = get('upload-new');
     if (submit) { submit.disabled = state.sending || !state.ready || Boolean(state.accepted); submit.textContent = state.pending ? 'Повторить отправку этой заявки' : 'Отправить в FotoMag'; }
     if (cancel) { cancel.hidden = !state.sending; cancel.disabled = !state.sending; }
@@ -68,10 +70,19 @@
   }
   function updateKindChoices() {
     if (!state.view) return;
+    const idPhoto = get('upload-kind')?.value === 'id450';
+    const formatField = get('upload-format-field');
+    if (formatField) formatField.hidden = !idPhoto;
+    const comment = get('upload-comment');
+    if (comment) comment.maxLength = idPhoto ? 500 - idHeading(get('upload-format')?.value).length - 1 : 500;
     for (const button of document.querySelectorAll('#direct-upload-form [data-upload-choice]')) {
       const selected = button.dataset.uploadChoice === get('upload-kind')?.value;
       button.classList.toggle('is-selected', selected); button.setAttribute('aria-pressed', String(selected));
     }
+  }
+  function rememberChoice() {
+    if (!window.history || window.location.hash !== '#send-files') return;
+    try { window.history.replaceState({...window.history.state, view:'upload', uploadKind:state.fields.kind, format:state.fields.format}, '', window.location.href); } catch (_) {}
   }
   function restore() {
     if (state.fields) for (const key of FIELD_IDS) {
@@ -123,6 +134,8 @@
       if (run !== healthRun) return false;
       state.ready = result.accepting_uploads === true;
       state.availability = state.ready ? 'Защищённый приём FotoMag работает.' : 'Приём пока закрыт. Проверьте соединение или используйте личный канал связи.';
+      const c = state.accepted;
+      if (state.ready && c) void pollStatus({created:{order_id:c.orderId, upload_token:c.token, receipt:c.receipt}});
     } catch (_) {
       if (run !== healthRun) return false;
       state.ready = false; state.availability = 'Нет связи с приёмником. Новая передача не начата. Проверьте соединение или используйте личный канал связи.';
@@ -189,7 +202,20 @@
     const problem = validate(files); if (problem) return status(problem, true);
     if (!form.reportValidity()) return;
     if (!fields.consent) return status('Подтвердите согласие на обработку данных.', true);
-    const details = {kind:fields.kind || 'documents', phone:fields.phone.trim(), client_name:fields.name.trim(), comment:fields.comment.trim(),
+    let comment = fields.comment.trim();
+    if (fields.kind === 'id450') {
+      const heading = idHeading(fields.format);
+      if (!heading) return status('Выберите формат фото на документы.', true);
+      // Keep the existing API contract: format travels in an immutable heading.
+      for (const key of Object.keys(ID_FORMATS)) {
+        const old = idHeading(key);
+        if (comment === old) comment = '';
+        else if (comment.startsWith(old + '\n')) comment = comment.slice(old.length).trim();
+      }
+      comment = heading + (comment ? '\n' + comment : '');
+    }
+    if (comment.length > 500) return status('Сократите пожелания к печати: вместе с форматом допустимо 500 символов. Текст сохранён.', true);
+    const details = {kind:fields.kind || 'documents', phone:fields.phone.trim(), client_name:fields.name.trim(), comment,
       consent:true, consent_version:fields.consentVersion, files:files.map(file => ({name:file.name, size:file.size}))};
     const signature = JSON.stringify(details);
     if (!state.pending || (!state.pending.submitStarted && (state.pending.signature !== signature || !files.every((file, i) => file === state.pending.files[i])))) {
@@ -265,12 +291,18 @@
     if (button.id === 'upload-new') { newOrder(); return; }
     if (state.sending || state.accepted || state.pending?.submitStarted) return;
     const kind = button.dataset.uploadChoice;
-    if (['photos','documents','id450'].includes(kind) && get('upload-kind')) { get('upload-kind').value = kind; state.dirty = true; snapshot(); updateKindChoices(); controls(); }
+    if (['photos','documents','id450'].includes(kind) && get('upload-kind')) { get('upload-kind').value = kind; state.dirty = true; snapshot(); rememberChoice(); updateKindChoices(); controls(); }
   });
   const inputChanged = event => {
     if (!state.view || !event.target.closest('#direct-upload-form') || state.sending || state.accepted || state.pending?.submitStarted) return;
     if (event.target.id === 'upload-files') state.files = [...event.target.files];
-    state.dirty = true; snapshot(); updateFiles(); controls();
+    if (event.target.id === 'upload-format') {
+      const note = get('upload-comment');
+      if (note && Object.keys(ID_FORMATS).some(key => note.value === idHeading(key))) note.value = idHeading(event.target.value);
+    }
+    state.dirty = true; snapshot();
+    if (event.target.id === 'upload-format') { rememberChoice(); updateKindChoices(); }
+    updateFiles(); controls();
   };
   document.addEventListener('change', inputChanged); document.addEventListener('input', inputChanged);
   document.addEventListener('submit', event => { if (event.target.id === 'direct-upload-form') { event.preventDefault(); void send(event.target); } });
