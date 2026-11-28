@@ -20,7 +20,7 @@ def local_site():
 def main():
     with local_site() as url,sync_playwright() as p:
         browser=p.chromium.launch(executable_path=which("google-chrome") or which("chromium"))
-        for width in (320,393,428,1280):
+        for width in (320,360,390,430,768,1366):
             context=browser.new_context(viewport={"width":width,"height":850},permissions=["clipboard-read","clipboard-write"])
             page=context.new_page()
             page.goto(url)
@@ -37,9 +37,12 @@ def main():
             expect(page.locator("#sheet-title")).to_have_text("Бесплатный Wi‑Fi")
             expect(page.locator(".wifi-creds")).to_contain_text("AGFA")
             expect(page.locator(".wifi-qr")).to_have_attribute("src","assets/wifi-agfa.svg")
-            expect(page.locator("#wifi-connect")).to_have_text("Скопировать пароль")
+            expect(page.locator("#wifi-connect")).to_have_text("Подключиться")
             page.locator("#wifi-connect").click()
             expect(page.locator("#wifi-connect-help")).to_be_visible()
+            expect(page.locator("#wifi-connect-help")).to_contain_text("Пароль скопирован.")
+            expect(page.locator("#wifi-connect-help")).to_contain_text("Откройте настройки Wi-Fi этого телефона")
+            assert page.evaluate("() => navigator.clipboard.readText()") == "00001111"
             page.locator("#sheet-close").click()
             page.locator("#quick-souvenirs").click()
             expect(page).to_have_url(re.compile(r"/souvenirs.html$"))
