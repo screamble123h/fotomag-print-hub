@@ -42,7 +42,7 @@ MAX_JSON_BYTES = 32 * 1024
 MAX_DAILY_LOG_BYTES = 4 * 1024 * 1024
 TZ_NAME = "Europe/Samara"
 PAGES = (
-    ("public_index", "", {"bot-primary-cta", "quick-id-photo", "quick-print-photo", "quick-documents", "direct-upload-primary", "screen-upload", "screen-wifi", "upload-submit", "upload-consent"}, "assets/app-shell.js"),
+    ("public_index", "", {"bot-primary-cta", "quick-id-photo", "quick-print-photo", "quick-documents", "direct-upload-primary", "screen-upload", "screen-wifi", "upload-submit", "upload-consent"}, "assets/app-shell.js?v=1128b"),
     ("public_souvenirs", "souvenirs.html", {"gift-request", "gift-copy", "gift-note", "gift-email"}, "assets/souvenirs.js"),
     ("public_mugs", "mugs.html", {"catalog", "forwardBtn", "backBtn", "photoDialog"}, "assets/mugs.js"),
 )
