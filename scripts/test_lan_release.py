@@ -65,7 +65,7 @@ class ScopedReleaseTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="fotomag-release-test-")
         self.addCleanup(self.temp.cleanup)
-        self.base = Path(self.temp.name)
+        self.base = Path(self.temp.name).resolve()
         self.source = self.base / "source"
         self.mount = self.base / "mount"
         self.control_parent = self.base / "control"

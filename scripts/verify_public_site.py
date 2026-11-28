@@ -47,7 +47,7 @@ class Auditor(HTMLParser):
             if name.lower()=='style':errors.append('Inline style detected')
         if tag=='script':
             self.scripts.append(a)
-            if not (a.get('src') in ('assets/app-shell.js','assets/direct-upload.js') or (a.get('type')=='application/ld+json' and not a.get('src'))):errors.append('Unexpected script tag')
+            if not (a.get('src') == 'assets/app-shell.js?v=1128b' or (a.get('type')=='application/ld+json' and not a.get('src'))):errors.append('Unexpected script tag')
         if tag=='form' and (a.get('id')!='direct-upload-form' or 'action' in a):
             errors.append('Unknown HTML form / unexpected form action')
         if tag in ('iframe','object','embed','base'):
@@ -107,11 +107,12 @@ csp=a.meta.get('content-security-policy','')
 for keyword in ("default-src 'none'","script-src 'self'","style-src 'self'","object-src 'none'","form-action 'none'","base-uri 'none'"):
     if keyword not in csp:errors.append('CSP is too broad: '+keyword)
 if 'unsafe-inline' in csp or 'unsafe-eval' in csp:errors.append('Unsafe CSP keyword')
-if not any(x.get('href')=='assets/app-shell.css' and x.get('rel')=='stylesheet' for x in a.css):errors.append('Self-hosted stylesheet missing')
+if not any(x.get('href')=='assets/app-shell.css?v=1128b' and x.get('rel')=='stylesheet' for x in a.css):errors.append('Self-hosted stylesheet missing')
+if not any(x.get('href')=='assets/home-v5.css?v=1128b' and x.get('rel')=='stylesheet' for x in a.css):errors.append('Versioned home stylesheet missing')
 if not any(x.get('href')=='site.webmanifest' for x in a.css):errors.append('PWA manifest missing')
 if not any(x.get('href')=='assets/fotomag_logo_official.svg' and x.get('rel')=='icon' for x in a.css):errors.append('Official favicon missing')
 if len(a.scripts)!=2:errors.append('Unexpected initial script count')
-if "assets/direct-upload.js" not in js:errors.append('Lazy-loaded upload handler route missing')
+if "assets/direct-upload.js?v=1128b" not in js:errors.append('Lazy-loaded upload handler route missing')
 if 'innerHTML' in js or 'eval(' in js or 'new Function(' in js or 'document.write(' in js:errors.append('Unsafe dynamic executable HTML')
 if any(x in upload_js for x in ('innerHTML','eval(','new Function(','document.write(','localStorage','sessionStorage','document.cookie')):errors.append('Forbidden browser capability in upload script')
 if any(x in js for x in ('XMLHttpRequest','localStorage','sessionStorage','fetch(')):errors.append('Unexpected data transfer/storage capability')

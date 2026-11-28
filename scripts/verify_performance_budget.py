@@ -48,7 +48,7 @@ if errors:
     for error in errors:
         print(" -", error)
     sys.exit(1)
-if 'src="assets/direct-upload.js"' in html:
+if 'src="assets/direct-upload.js' in html:
     errors.append("Lazy upload JS must not be loaded on the landing page")
 if errors:
     print("FAIL FotoMag initial-load budget:", *errors, sep="\n - ")

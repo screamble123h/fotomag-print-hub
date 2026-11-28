@@ -41,7 +41,7 @@ const sequence=++uploadViewSequence;
 if(!uploadScriptPromise && !window.FotoMagDirectUpload) {
 uploadScriptPromise=new Promise((resolve, reject)=>{
 const script=document.createElement('script');
-script.src='assets/direct-upload.js';
+script.src='assets/direct-upload.js?v=1128b';
 script.async=true;
 script.onload=()=>window.FotoMagDirectUpload ? resolve() : reject(new Error('Upload unavailable'));
 script.onerror=()=>reject(new Error('Upload script unavailable'));
