@@ -50,3 +50,25 @@
 .wifi-same-phone{font-size:13px;line-height:1.5;color:#514b3e;margin:9px 0}
 @media(max-width:360px){.fm-head{padding-left:11px;padding-right:11px}.fm-brand-row{grid-template-columns:122px minmax(0,1fr);gap:8px}.fm-head .brand-img{width:122px;height:64px}.fm-brand-motto{font-size:14px;padding-left:8px}.fm-head .fm-call,.fm-head .fm-wifi{font-size:12px;gap:4px}.fm-head .fm-wifi svg{width:18px;height:18px;flex-basis:18px}.fm-bot-panel .quick-bots{gap:5px}.social-contact__grid{gap:4px}.social-contact__button{font-size:10.5px}.fm-direct-caption strong{font-size:16px}.fm-home .app-tile:not(#quick-id-photo){height:153px}}
 @media(max-width:310px){.fm-brand-row{grid-template-columns:103px minmax(0,1fr)}.fm-head .brand-img{width:103px}.fm-brand-motto{font-size:12px}.social-contact__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Readable customer controls and restored draft state. */
+.fm-head-address,.fm-head-hours,.fm-head .fm-call,.fm-head .fm-wifi{font-size:.875rem}
+.fm-bot-panel #bot-primary-cta p,.fm-bot-panel .quick-bot,.social-contact__button{font-size:.875rem}
+.social-contact__note,.upload-small,.sheet-note,.wifi-same-phone,.wifi-qr-label{font-size:.875rem;line-height:1.5}
+.fm-head .fm-wifi{padding:10px 8px}
+.fm-head .brand-img{object-fit:contain;height:auto;min-height:70px}
+.prepared-order{display:block;width:100%;box-sizing:border-box;min-height:7rem;font:inherit;line-height:1.5;padding:12px;border:1px solid #bdbdbd;border-radius:12px;resize:vertical;background:#fff;color:#161616}
+[hidden]{display:none!important}
+#upload-cancel,#upload-new{width:100%;min-height:46px;margin-top:10px;font-size:1rem}
+#upload-cancel{border:1px solid #777;background:#fff;color:#222}
+.direct-upload-form :disabled{cursor:default}
+.wifi-creds strong{user-select:text}
+@media(max-width:380px){.fm-brand-row{grid-template-columns:120px minmax(0,1fr);gap:9px}.fm-brand-motto{font-size:1rem;padding-left:9px}.fm-head .brand-img{width:120px}.fm-head-actions{gap:6px}}
+
+.fm-head .fm-wifi span{white-space:normal;overflow-wrap:anywhere;min-width:0;line-height:1.25}
+
+.fm-head-actions{grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))}
+.fm-head .fm-call{flex-wrap:wrap}
+.fm-bot-panel .quick-bots{grid-template-columns:repeat(auto-fit,minmax(min(100%,5.75rem),1fr))}
+.fm-bot-panel .quick-bot span,.social-contact__button span{overflow-wrap:anywhere;min-width:0}
+.social-contact__grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,4rem),1fr))}
