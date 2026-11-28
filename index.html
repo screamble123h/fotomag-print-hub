@@ -78,7 +78,8 @@
 <button aria-pressed="false" class="upload-service-choice" data-upload-choice="id450" type="button">🪪 На документы</button>
 </div>
 </fieldset>
-<input id="upload-kind" name="kind" type="hidden" value="photos"/><input id="upload-format" name="format" type="hidden" value="35x45"/>
+<input id="upload-kind" name="kind" type="hidden" value="photos"/>
+<div id="upload-format-field" hidden><label for="upload-format">Формат фото на документы · 450 ₽</label><select id="upload-format" name="format"><option value="35x45">35×45 мм — 8 шт.</option><option value="3x4">3×4 см — 6 шт.</option><option value="4x6">4×6 см — 4 шт.</option></select></div>
 <input accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.pdf,.docx,.xlsx" class="upload-file-input" id="upload-files" multiple name="files" required type="file"/>
 <label class="upload-picker" for="upload-files"><span aria-hidden="true" class="upload-picker-symbol">↑</span><strong>Выбрать файлы</strong><small>Из галереи или телефона · до 10 файлов без сжатия</small></label>
 <p class="upload-small" id="upload-files-summary">JPG, PNG, WEBP, HEIC, PDF, DOCX, XLSX · до 25 МБ каждый.</p>

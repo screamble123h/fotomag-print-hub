@@ -122,6 +122,44 @@ async function prepare(f, files = [file('нейтральный.jpg'), file('д�
 }
 
 (async () => {
+  for (const [format, label] of [['35x45','35×45 мм, 8 шт.'], ['3x4','3×4 см, 6 шт.'], ['4x6','4×6 см, 4 шт.']]) {
+    for (const note of ['', 'Сделайте срочно', 'Фото на документы 35×45 мм, 8 шт. — 450 ₽\nБез ретуши', 'Фото на документы 35×45 мм, 8 шт. — 450 ₽ Без ретуши']) {
+      const f = fixture(); await prepare(f);
+      f.fill('kind', 'id450'); f.fill('format', format); f.fill('comment', note);
+      f.submit(); await flush();
+      const body = f.requests.find(r => r.path === '/api/orders').data;
+      const expectedNote = note.startsWith('Фото на документы') ? 'Без ретуши' : note;
+      assert.equal(body.kind, 'id450');
+      assert.equal(body.comment, 'Фото на документы ' + label + ' — 450 ₽' + (expectedNote ? '\n' + expectedNote : ''));
+      assert.equal(f.node('upload-format').disabled, true);
+    }
+  }
+  {
+    const f = fixture(); await prepare(f);
+    f.fill('kind', 'id450'); f.fill('format', 'constructor'); f.submit(); await flush();
+    assert.equal(f.requests.filter(r => r.path === '/api/orders').length, 0);
+    f.fill('format', '4x6'); f.fill('comment', 'я'.repeat(500)); f.submit(); await flush();
+    assert.equal(f.requests.filter(r => r.path === '/api/orders').length, 0);
+    assert.equal(f.node('upload-comment').value.length, 500, 'Never truncate client instructions');
+    f.fill('comment', 'я'.repeat(500 - 'Фото на документы 4×6 см, 4 шт. — 450 ₽'.length - 1));
+    f.submit(); await flush();
+    assert.equal(f.requests.find(r => r.path === '/api/orders').data.comment.length, 500);
+  }
+  console.log('PASS all ID formats survive empty/edited comments; stale heading replaced; API length enforced without truncation');
+  {
+    let delivered = false, accepting = true, offline = false;
+    const f = fixture({fetch:({path}) => path === '/api/health' ? {accepting_uploads:accepting} : path.endsWith('/status') ? offline ? new Error('Temporary network failure') : {receipt:'FM-TEST-1', status:delivered?'received':'pending', downloaded_to_pc:delivered} : undefined});
+    await prepare(f); f.submit(); await flush(); await f.tick(40000);
+    assert.doesNotMatch(f.api.getState().status, /доставлена на компьютер/);
+    delivered = true; accepting = false; f.click('upload-recheck'); await flush(); await f.tick(5000);
+    assert.match(f.api.getState().status, /доставлена на компьютер/);
+    assert.equal(f.requests.filter(r => r.path === '/api/orders').length, 1);
+    offline = true; f.click('upload-recheck'); await flush(); await f.tick(40000);
+    assert.match(f.api.getState().status, /доставлена на компьютер/);
+    f.reopen(); await flush(); await f.tick(40000);
+    assert.match(f.api.getState().status, /доставлена на компьютер/);
+    console.log('PASS late delivery recheck while intake closed; confirmed delivery survives errors/reopen; no duplicate order');
+  }
   {
     const f = fixture({endpoint:''}); await flush();
     f.fill('kind', 'id450'); f.fill('format', '4x6');

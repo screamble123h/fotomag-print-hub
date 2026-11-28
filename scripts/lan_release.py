@@ -173,23 +173,46 @@ def check_limits(root: Path, names: list[str]) -> None:
             raise ReleaseError("Static bundle exceeds 100 MiB.")
 
 
-def old_files() -> list[str]:
+def static_root(original: bytes) -> str:
+    if len(original) > 64 * 1024:
+        raise ReleaseError("Caddy configuration exceeds 64 KiB; manual review required.")
+    roots = [line.strip() for line in original.decode("utf-8").splitlines()
+             if re.match(r"[ \t]*root[ \t]+", line)]
+    if len(roots) != 1:
+        raise ReleaseError("Expected exactly one static root directive.")
+    match = re.fullmatch(r"root \* (/srv/site(?:/releases/[0-9a-f]{40})?)[ \t]*", roots[0])
+    if not match:
+        raise ReleaseError("Static root must be the guarded mount or an immutable release.")
+    return match.group(1)
+
+
+def static_path(root: str) -> Path:
+    if not isinstance(root, str) or not re.fullmatch(r"/srv/site(?:/releases/[0-9a-f]{40})?", root):
+        raise ReleaseError("Unexpected previous static root.")
+    path = MOUNT if root == "/srv/site" else MOUNT / "releases" / root.rsplit("/", 1)[1]
+    checked_path(path)
+    if not path.is_dir():
+        raise ReleaseError("Previous static root is missing.")
+    return path
+
+
+def old_files(root: Path = MOUNT) -> list[str]:
     names = []
-    for item in MOUNT.iterdir():
+    for item in root.iterdir():
         if item.is_file() and (item.suffix.lower() == ".html" or item.name == "site.webmanifest"):
             names.append(relative_name(item.name, old=True))
-    assets = MOUNT / "assets"
+    assets = root / "assets"
     if assets.exists():
         checked_path(assets)
         for directory, dirs, files in os.walk(assets, followlinks=False):
             for child in dirs:
                 checked_path(Path(directory) / child)
             for child in files:
-                name = (Path(directory) / child).relative_to(MOUNT).as_posix()
+                name = (Path(directory) / child).relative_to(root).as_posix()
                 names.append(relative_name(name, old=True))
                 if len(names) > MAX_FILES:
                     raise ReleaseError("Old static backup exceeds 300 files.")
-    check_limits(MOUNT, names)
+    check_limits(root, names)
     return sorted(names)
 
 
@@ -221,16 +244,17 @@ def lan_index(data: bytes) -> bytes:
 def candidate_config(original: bytes, names: list[str], commit: str) -> bytes:
     if len(original) > 64 * 1024:
         raise ReleaseError("Caddy configuration exceeds 64 KiB; manual review required.")
+    previous_root = static_root(original)
     lines = original.decode("utf-8").splitlines(keepends=True)
     matcher_starts, roots = [], []
     for number, line in enumerate(lines):
         text = line.rstrip("\r\n")
         if re.fullmatch(r"[ \t]*@static[ \t]+\{[ \t]*", text):
             matcher_starts.append(number)
-        if re.fullmatch(r"[ \t]*root \* /srv/site[ \t]*", text):
+        if re.fullmatch(r"[ \t]*root \* " + re.escape(previous_root) + r"[ \t]*", text):
             roots.append(number)
     if len(matcher_starts) != 1 or len(roots) != 1:
-        raise ReleaseError("Expected one @static matcher block and one root * /srv/site line.")
+        raise ReleaseError("Expected one @static matcher block and one guarded static root line.")
     static, methods, closed = [], [], False
     for number in range(matcher_starts[0] + 1, len(lines)):
         text = lines[number].rstrip("\r\n")
@@ -283,11 +307,13 @@ def prepare(commit: str, control: Path, release: Path) -> dict:
     set_phase(control, "preparing", commit=commit)
     names = source_files(commit)
     original = LIVE_CONFIG.read_bytes()
+    previous_root = static_root(original)
+    previous_path = static_path(previous_root)
     candidate = candidate_config(original, names, commit)
     backup = control / "backup"
     backup.mkdir()
     (backup / "Caddyfile").write_bytes(original)
-    old = {name: copy_checked(MOUNT / name, backup / "site" / name) for name in old_files()}
+    old = {name: copy_checked(previous_path / name, backup / "site" / name) for name in old_files(previous_path)}
     release.parent.mkdir(exist_ok=True)
     checked_path(release.parent)
     stage = release.parent / (".prepare-" + commit + "-" + uuid4().hex[:8])
@@ -309,7 +335,7 @@ def prepare(commit: str, control: Path, release: Path) -> dict:
     manifest = {"schema": 1, "commit": commit, "created": now(), "timezone": "Europe/Samara",
                 "source": str(SOURCE), "mount": str(MOUNT), "live_config": str(LIVE_CONFIG),
                 "original_config_sha256": digest(original), "candidate_config_sha256": digest(candidate),
-                "files": files, "old_files": old}
+                "files": files, "old_files": old, "old_static_root": previous_root}
     (stage / "candidate.Caddyfile").write_bytes(candidate)
     (stage / "rollback.Caddyfile").write_bytes(original)
     manifest_bytes = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
@@ -350,15 +376,19 @@ def load_prepared(commit: str, control: Path, release: Path) -> tuple[dict, dict
             raise ReleaseError("Immutable release configuration or manifest changed.")
     if file_digest(control / "backup" / "Caddyfile") != manifest["original_config_sha256"]:
         raise ReleaseError("Original configuration backup changed.")
+    original = (control / "backup" / "Caddyfile").read_bytes()
+    if static_root(original) != manifest.get("old_static_root", "/srv/site"):
+        raise ReleaseError("Previous static root differs from the verified rollback configuration.")
     return manifest, state
 
 
 def assert_old_static(manifest: dict) -> None:
-    if old_files() != sorted(manifest["old_files"]):
+    previous_path = static_path(manifest.get("old_static_root", "/srv/site"))
+    if old_files(previous_path) != sorted(manifest["old_files"]):
         raise ReleaseError("Old live static file list changed since preparation.")
     for name, info in manifest["old_files"].items():
         relative_name(name, old=True)
-        if file_digest(MOUNT / name) != info["sha256"]:
+        if file_digest(previous_path / name) != info["sha256"]:
             raise ReleaseError("Old live static files changed; preserve concurrent edits.")
 
 

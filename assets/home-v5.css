@@ -72,3 +72,5 @@
 .fm-bot-panel .quick-bots{grid-template-columns:repeat(auto-fit,minmax(min(100%,5.75rem),1fr))}
 .fm-bot-panel .quick-bot span,.social-contact__button span{overflow-wrap:anywhere;min-width:0}
 .social-contact__grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,4rem),1fr))}
+
+#upload-format{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid #b6b6b6;border-radius:10px;background:#fff;color:#171717;font:inherit}
