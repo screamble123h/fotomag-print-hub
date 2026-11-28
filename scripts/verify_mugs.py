@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Static release gate for the customer-facing FotoMag mug catalog."""
-import json, re
+import json, re, subprocess
 from pathlib import Path
 R=Path(__file__).resolve().parents[1]
 d=json.loads((R/"assets/mug-catalog.json").read_text(encoding="utf-8"))
@@ -14,7 +14,7 @@ for x in items:
  if x["sku"]:
   p=R/x["image"] if x.get("image") else None
   if not p or not p.is_file():problems.append(f"Missing source photo for {x['sku']}")
-  if x["price"] not in (None,1250):problems.append(f"Unverified retail price {x['sku']}")
+  if x["price"] != (1250 if x["sku"]=="10335" else None):problems.append(f"Unverified retail price {x['sku']}")
  else:
   if x["price"]!=650:problems.append("White classic FotoMag price must be 650")
 html=(R/"mugs.html").read_text(encoding="utf-8")
@@ -31,4 +31,5 @@ if souvenirs.count('name="gift"')!=28:problems.append("Approved souvenir list ch
 if any(f'id="gift-group-{i}" open' in souvenirs for i in range(1,5)):problems.append("Souvenir groups should start collapsed")
 if "закупочная" in html.lower() or "price_from_supplier" in js:problems.append("Wholesale pricing exposed")
 if problems:raise SystemExit("FAIL FotoMag mugs:\n - "+"\n - ".join(problems))
+subprocess.run(["node", str(R/"scripts/test_mug_order.cjs")], check=True)
 print("PASS 139 mugs, 31 original series, 138 local supplier photos, no wholesale prices, mug ordering links")

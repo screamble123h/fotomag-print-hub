@@ -163,7 +163,7 @@ for f in [HTML,CSS,JS,UPLOAD_JS]:
 if 'function openUploadOnLocalFotoMag' in js:
     if "location.assign('https://fotomag-izhevsk.dynv6.net:8443/#send-files')" in js:
         errors.append('Dead-end navigation to the LAN-only upload host is forbidden')
-    if "window.open('https://fotomag-izhevsk.dynv6.net:8443/#send-files', '_blank', 'noopener,noreferrer')" not in js:
+    if "window.open(destination.href, '_blank', 'noopener,noreferrer')" not in js or "new URL('https://fotomag-izhevsk.dynv6.net:8443/#send-files')" not in js:
         errors.append('Public homepage must preserve its tab when opening AGFA upload')
 
 if errors:
