@@ -123,7 +123,7 @@ async function prepare(f, files = [file('нейтральный.jpg'), file('д�
 
 (async () => {
   for (const [format, label] of [['35x45','35×45 мм, 8 шт.'], ['3x4','3×4 см, 6 шт.'], ['4x6','4×6 см, 4 шт.']]) {
-    for (const note of ['', 'Сделайте срочно', 'Фото на документы 35×45 мм, 8 шт. — 450 ₽\nБез ретуши']) {
+    for (const note of ['', 'Сделайте срочно', 'Фото на документы 35×45 мм, 8 шт. — 450 ₽\nБез ретуши', 'Фото на документы 35×45 мм, 8 шт. — 450 ₽ Без ретуши']) {
       const f = fixture(); await prepare(f);
       f.fill('kind', 'id450'); f.fill('format', format); f.fill('comment', note);
       f.submit(); await flush();
@@ -147,14 +147,18 @@ async function prepare(f, files = [file('нейтральный.jpg'), file('д�
   }
   console.log('PASS all ID formats survive empty/edited comments; stale heading replaced; API length enforced without truncation');
   {
-    let delivered = false;
-    const f = fixture({fetch:({path}) => path.endsWith('/status') ? {receipt:'FM-TEST-1', status:delivered?'received':'pending', downloaded_to_pc:delivered} : undefined});
+    let delivered = false, accepting = true, offline = false;
+    const f = fixture({fetch:({path}) => path === '/api/health' ? {accepting_uploads:accepting} : path.endsWith('/status') ? offline ? new Error('Temporary network failure') : {receipt:'FM-TEST-1', status:delivered?'received':'pending', downloaded_to_pc:delivered} : undefined});
     await prepare(f); f.submit(); await flush(); await f.tick(40000);
     assert.doesNotMatch(f.api.getState().status, /доставлена на компьютер/);
-    delivered = true; f.click('upload-recheck'); await flush(); await f.tick(5000);
+    delivered = true; accepting = false; f.click('upload-recheck'); await flush(); await f.tick(5000);
     assert.match(f.api.getState().status, /доставлена на компьютер/);
     assert.equal(f.requests.filter(r => r.path === '/api/orders').length, 1);
-    console.log('PASS manual recheck refreshes a late delivery without creating or submitting another order');
+    offline = true; f.click('upload-recheck'); await flush(); await f.tick(40000);
+    assert.match(f.api.getState().status, /доставлена на компьютер/);
+    f.reopen(); await flush(); await f.tick(40000);
+    assert.match(f.api.getState().status, /доставлена на компьютер/);
+    console.log('PASS late delivery recheck while intake closed; confirmed delivery survives errors/reopen; no duplicate order');
   }
   {
     const f = fixture({endpoint:''}); await flush();

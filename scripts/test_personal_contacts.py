@@ -167,6 +167,7 @@ def check_reload_context(page, url):
     expect(page.locator('[data-format="4x6"]')).to_have_attribute("aria-pressed", "true")
     expect(page.locator("#id-format-summary")).to_contain_text("4×6 см — 4 фото")
     page.locator("#id450-personal").click()
+    check_service_context(page, "4×6 см", 4, copy=False)
     page.reload()
     check_service_context(page, "4×6 см", 4, copy=False)
     assert page.evaluate("window.__opened.length") == 0

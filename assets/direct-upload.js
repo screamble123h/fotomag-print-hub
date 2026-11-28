@@ -134,12 +134,12 @@
       if (run !== healthRun) return false;
       state.ready = result.accepting_uploads === true;
       state.availability = state.ready ? 'Защищённый приём FotoMag работает.' : 'Приём пока закрыт. Проверьте соединение или используйте личный канал связи.';
-      const c = state.accepted;
-      if (state.ready && c) void pollStatus({created:{order_id:c.orderId, upload_token:c.token, receipt:c.receipt}});
     } catch (_) {
       if (run !== healthRun) return false;
       state.ready = false; state.availability = 'Нет связи с приёмником. Новая передача не начата. Проверьте соединение или используйте личный канал связи.';
     }
+    const c = state.accepted;
+    if (c && !c.delivered) void pollStatus({created:{order_id:c.orderId, upload_token:c.token, receipt:c.receipt}});
     controls(); return state.ready;
   }
   function validate(files) {
@@ -175,9 +175,10 @@
   // The existing receiver stores "pending" only after verified /submit; it is not a PC acknowledgement.
   function confirmsReceipt(result) { return result.received === true || result.status === 'pending' || delivered(result); }
   function accept(attempt, result) {
-    state.accepted = {orderId:attempt.created.order_id, token:attempt.created.upload_token, receipt:attempt.created.receipt};
+    const pc = delivered(result) || state.accepted?.delivered === true;
+    state.accepted = {orderId:attempt.created.order_id, token:attempt.created.upload_token, receipt:attempt.created.receipt, delivered:pc};
     state.pending = null; state.progress = 100;
-    status(delivered(result) ? '✓ Заявка ' + state.accepted.receipt + ' доставлена на компьютер FotoMag в канал «Напрямую». Сотрудник проверит файлы перед печатью.' : '✓ Заявка ' + state.accepted.receipt + ' принята сервером. Подтверждение доставки на компьютер ожидается. Печать подтверждает сотрудник.');
+    status(pc ? '✓ Заявка ' + state.accepted.receipt + ' доставлена на компьютер FotoMag в канал «Напрямую». Сотрудник проверит файлы перед печатью.' : '✓ Заявка ' + state.accepted.receipt + ' принята сервером. Подтверждение доставки на компьютер ожидается. Печать подтверждает сотрудник.');
     controls();
   }
   async function pollStatus(attempt) {
@@ -210,7 +211,7 @@
       for (const key of Object.keys(ID_FORMATS)) {
         const old = idHeading(key);
         if (comment === old) comment = '';
-        else if (comment.startsWith(old + '\n')) comment = comment.slice(old.length).trim();
+        else if (comment.startsWith(old) && /^\s/.test(comment.slice(old.length))) comment = comment.slice(old.length).trim();
       }
       comment = heading + (comment ? '\n' + comment : '');
     }
