@@ -188,8 +188,14 @@ scroll.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function openUploadOnLocalFotoMag(section, clicked = false, options = {}) {
 if (section !== 'upload' || location.hostname !== 'screamble123h.github.io') return false;
+const saved = window.FotoMagDirectUpload?.getState();
+const retained = saved?.hasDraft || saved?.pending || saved?.sending || saved?.receipt;
 openView('upload', { ...options, setHash: clicked });
 if (clicked) {
+if (retained) {
+announce('Открыта текущая заявка. Данные сохранены в этой вкладке.');
+return true;
+}
 const destination = new URL('https://fotomag-izhevsk.dynv6.net:8443/#send-files');
 const kind = options.uploadKind || incoming.get('kind') || 'photos';
 destination.searchParams.set('kind', ['photos','documents','id450'].includes(kind) ? kind : 'photos');
@@ -284,6 +290,8 @@ sheet.addEventListener('click', event => {
 if (event.target === sheet) closeView({ resetHash: true });
 });
 sheet.addEventListener('close', () => {
+// A queued close can arrive after Back/Forward has already reopened the dialog.
+if (sheet.open) return;
 leaveUpload();
 active='home';selectedDock('home');
 if(window.location.hash && hashRoutes[window.location.hash]){

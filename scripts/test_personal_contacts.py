@@ -138,12 +138,25 @@ def check_history(page, url):
     expect(page.locator("#id-format-summary")).to_contain_text("3×4 см — 6 фото")
     page.go_forward()
     check_service_context(page, "4×6 см", 4, copy=False)
+    route_before_close = page.url
+    # Native close is queued. Reopen before it fires to reproduce the stale event.
+    page.evaluate("""() => new Promise(resolve => {
+      const dialog = document.getElementById('sheet');
+      dialog.addEventListener('close', () => resolve(), {once: true});
+      dialog.close();
+      dialog.showModal();
+    })""")
+    assert page.url == route_before_close, "A stale close erased the reopened route"
+    expect(page.locator("#sheet")).to_be_visible()
+    check_service_context(page, "4×6 см", 4, copy=False)
     close_sheet(page)
 
 
 def wait_for_upload(page):
-    page.wait_for_function("Boolean(window.FotoMagDirectUpload)")
-    expect(page.locator("#upload-availability")).not_to_be_empty()
+    # The module fills this live status after onView. Locator polling works with
+    # script-src 'self'; wait_for_function would require CSP-disallowed eval.
+    expect(page.locator("#upload-availability")).not_to_be_empty(timeout=30000)
+    assert page.evaluate("() => Boolean(window.FotoMagDirectUpload)"), "Upload handler did not initialize"
 
 
 def check_upload_ui(page, url):
@@ -353,7 +366,8 @@ def check_public_handoff(browser):
                 select_format(page, key)
             page.locator(".upload-service-cta" if kind == "documents" else "#id450-upload").click()
         wait_for_upload(page)
-        page.wait_for_function("window.__opened.length === 1")
+        # The click and completed onView already precede this synchronous capture.
+        assert page.evaluate("() => window.__opened.length") == 1
         assert_local_destination(page.evaluate("window.__opened[0]"), kind, key)
         expect(page.locator("#upload-kind")).to_have_value(kind)
         # Traversing history must not launch more tabs.
@@ -361,6 +375,34 @@ def check_public_handoff(browser):
         page.go_forward()
         expect(page.locator("#sheet-title")).to_have_text("Отправить файлы")
         assert page.evaluate("window.__opened.length") == 1
+
+    response = page.goto(PUBLIC_URL)
+    if response is None:
+        page.reload()
+    page.locator("#direct-upload-primary").click()
+    wait_for_upload(page)
+    page.locator('[data-upload-choice="documents"]').click()
+    page.locator("#upload-comment").fill("Сохранённый черновик документов")
+    close_sheet(page)
+    page.locator("#quick-id-photo").click()
+    select_format(page, "4x6")
+    page.locator("#id450-upload").click()
+    wait_for_upload(page)
+    expect(page.locator("#upload-kind")).to_have_value("documents")
+    expect(page.locator("#upload-comment")).to_have_value("Сохранённый черновик документов")
+    assert page.evaluate("window.__opened.length") == 1, "Restoring a draft opened a mismatching new form"
+    page.locator("#upload-recheck").click()
+    assert page.evaluate("window.__opened.length") == 2
+    assert_local_destination(page.evaluate("window.__opened[1]"), "documents", "35x45")
+    # Explicit reset allows a new service handoff with the newly selected format.
+    page.locator("#upload-new").click()
+    close_sheet(page)
+    page.locator("#quick-id-photo").click()
+    select_format(page, "4x6")
+    page.locator("#id450-upload").click()
+    wait_for_upload(page)
+    assert page.evaluate("window.__opened.length") == 3
+    assert_local_destination(page.evaluate("window.__opened[2]"), "id450", "4x6")
     context.close()
 
 
