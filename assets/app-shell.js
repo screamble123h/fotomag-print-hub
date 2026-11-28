@@ -290,7 +290,7 @@ sheet.addEventListener('click', event => {
 if (event.target === sheet) closeView({ resetHash: true });
 });
 sheet.addEventListener('close', () => {
-// A queued close can arrive after Back/Forward has already reopened the dialog.
+// Ignore a stale close.
 if (sheet.open) return;
 leaveUpload();
 active='home';selectedDock('home');
